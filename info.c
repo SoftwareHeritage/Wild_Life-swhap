@@ -31,8 +31,10 @@ int n;
 */
 void title()
 {
+  if (quietflag) return; /* 21.1 */
+
   printf("Wild_Life Interpreter Version +VERSION+ (+DATE+)\n");
-  printf("Copyright (C) 1991 Digital Equipment Corporation, Paris Research Laboratory\n");
+  printf("Copyright (C) 1991-93 Digital Equipment Corporation, Paris Research Laboratory\n");
 
 #ifndef X11
   printf("No X predicates installed\n");

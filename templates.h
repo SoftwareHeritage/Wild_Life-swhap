@@ -23,6 +23,14 @@ extern int get_arg ();
 	long val[NBARGS]; \
 	int ii, success=TRUE, resi=FALSE
 
+/* 16.12 */
+#ifdef X11
+#define XPART(argi,vali) \
+    if (argi->type == xwindow || argi->type == xpixmap) \
+        vali = GetIntAttr (argi, "id");
+#else
+#define XPART(argi,vali) if (FALSE) ;
+#endif
 
 #define begin_builtin(FUNCNAME, NBARGS, NBARGSIN, TYPES) \
     if (NBARGS > MAXNBARGS) \
@@ -62,8 +70,7 @@ extern int get_arg ();
 		if (args[ii]->type == false) \
 		    val[ii] = FALSE; \
 		else \
-		if (args[ii]->type == xwindow || args[ii]->type == xpixmap) \
-		    val[ii] = GetIntAttr (args[ii], "id"); \
+		XPART(args[ii],val[ii]) /* 16.12 */ \
 		else \
 		    num[ii] = FALSE; /* force the residuation */ \
 	} \

@@ -1,0 +1,52 @@
+
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+
+% Simple PERT scheduler written in Life.
+% Author: Bruno Dumant.
+
+
+op(400,yfx,##)?
+X##Y -> project(Y,X).
+
+%%%% Do the scheduling %%%%
+:: A:activity( duration =>D:real,
+	       earlyStart => earlyCalc(R),
+	       lateStart  => {1e500;real}, 
+	       prerequisites => R:{[];list} ) | lateCalc(A,R).
+	    
+% Pass 1: Calculate the earliest time that A can start.
+earlyCalc([]) -> 0.
+earlyCalc([B|ListOfActs]) ->
+	max(B##earlyStart+B##duration,earlyCalc(ListOfActs)).
+
+% Pass 2: Calculate the latest time that A's prerequisites can start
+% and still finish before A starts.
+lateCalc(A,[]) -> succeed.
+lateCalc(A,[B:activity|ListOfActs]) ->
+	lateCalc(A,ListOfActs) |
+	assign(LSB:(B##lateStart), min(LSB, A##earlyStart-B##duration)).
+
+% Wait until B is an integer before doing the assignment:
+assign(A,B:int) -> succeed | A<-B.
+
+%%%% Prettyprint the output %%%%
+visAllActs([]).
+visAllActs([A|B],N:{1;real}) :- visualize(A,N), visAllActs(B,N+1).
+
+visualize(A:activity,N:int) :-
+	write("Activity ",N,": "),
+	visStart(A##earlyStart),visDuration(A##duration,"*"),nl,
+	write("            "),
+	% Only print lateStart if it fits on the screen (it could
+	% be infinite, after all!):
+	cond( A##lateStart=<50,
+	      (visStart(A##lateStart),visDuration(A##duration,"-"),nl,nl),
+	      nl
+	).
+
+visStart(N:int) :- visNcar(N," ").
+visDuration(N,S):- visNcar(N,S).
+
+visNcar(0,@) :- !.
+visNcar(N,S) :- write(S), visNcar(N-1,S).

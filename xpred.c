@@ -53,8 +53,8 @@ typedef struct _EventClosure
 extern FILE *input_stream;
 extern int line_count;
 extern int start_of_line;
-extern char saved_char;
-extern char old_saved_char;
+extern int saved_char; /* 11.2 */
+extern int old_saved_char; /* 11.2 */
 
 extern char **arg_v;
 extern int arg_c;
@@ -1941,7 +1941,7 @@ int xcRequestNamedColor ()
     types[0] = real;
     types[1] = real;
     types[2] = quoted_string;
-    types[0] = real;
+    types[3] = real; /* 18.12 */
 
     begin_builtin (xcRequestNamedColor, 4, 3, types);
 
@@ -2428,7 +2428,7 @@ int xcUnloadFont()
 
 
     types[0] = real;
-    types[2] = real;
+    types[1] = real; /* 18.12 */
 
     begin_builtin (xcUnloadFont, 2, 2, types);
 
@@ -3137,7 +3137,7 @@ int *ptreventflag;
 	    {
 		start_of_line = FALSE;
 		line_count ++ ;
-		printf ("%s",prompt); 
+		Infoline ("%s",prompt); /* 21.1 */
 		fflush (output_stream);
 	    }
 
@@ -3145,9 +3145,8 @@ int *ptreventflag;
 
 	    if (*ptreventflag)
 	    {
-		if (verbose)
-		    printf ("<X event>");
-		printf ("\n");
+		if (verbose) printf ("<X event>");
+		if (NOTQUIET) printf ("\n"); /* 21.1 */
 	    }
       
 	    if (c == EOLN)

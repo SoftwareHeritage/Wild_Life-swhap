@@ -16,7 +16,9 @@
 #include "error.h"
 
 int warningflag=TRUE;
+int quietflag=FALSE; /* 21.1 */
 int trace=FALSE;
+int verbose=FALSE; /* 21.1 */
 int stepflag;
 int steptrace;
 int stepcount;
@@ -214,7 +216,7 @@ VarArgDecl;
 
 /* Utilities for tracing and single stepping */
 
-/* Initialize all tracing variables */
+/* Initialize all tracing and stepping variables */
 void init_trace()
 {
   trace=FALSE;

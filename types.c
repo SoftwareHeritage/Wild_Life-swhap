@@ -57,7 +57,8 @@ def_type t;
 /* Confirm an important change */
 int yes_or_no()
 {
-  char *old_prompt,c,d;
+  char *old_prompt;
+  int c,d; /* 21.12 (prev. char) */
   ptr_psi_term old_state;
 
   perr("*** Are you really sure you want to do that ");
@@ -850,7 +851,7 @@ int w;
     d = (ptr_definition)t->data;
     if (d->type==type) {
       c = (ptr_int_list)d->code;
-      ci = &(ptr_int_list)d->code;
+      ci = (ptr_int_list *)&(d->code); /* 21.12 */
   
       /* Count how many words have to be added */
       while (c) {
@@ -859,6 +860,7 @@ int w;
         w--;
       }
       assert(w>=0);
+      /* printf("w = %d\n",w); 18.12 */
       /* Add the words */
       for (i=0; i<w; i++) {
         *ci = HEAP_ALLOC(int_list);
@@ -1094,7 +1096,7 @@ void encode_types()
     
     nothing->code=NULL;
     
-    Infoline("*** Codes:\n%C= %s\n", NULL, nothing->symbol);
+    Traceline("*** Codes:\n%C= %s\n", NULL, nothing->symbol); /* 21.1 */
     
     gamma_table=(ptr_definition *) heap_alloc(type_count*sizeof(definition));
     
@@ -1118,7 +1120,7 @@ void encode_types()
           xdef->code=code;
           gamma_table[p]=xdef;
           
-          Infoline("%C = %s\n", code, xdef->symbol);
+          Traceline("%C = %s\n", code, xdef->symbol); /* 21.1 */
           p=p+1;
         }
         
@@ -1160,8 +1162,8 @@ void encode_types()
       or_codes(top->code,two_to_the(i));
 
     gamma_table[p]=top;
-    
-    Infoline("%C = @\n\n", top->code);
+
+    Traceline("%C = @\n\n", top->code); /* 21.1 */
     equalize_codes(symbol_table,p/32+1);
 
     propagate_definitions();
@@ -1169,7 +1171,7 @@ void encode_types()
     /* Inherit 'FALSE' always_check flags to all types' children */
     inherit_always_check();
     
-    Infoline("*** Encoding done, %d sorts\n",type_count);
+    Traceline("*** Encoding done, %d sorts\n",type_count); /* 21.1 */
     
     if (overlap_type(real,quoted_string)) {
       Errorline("the sorts 'real' and 'string' are not disjoint.\n");
@@ -1293,7 +1295,7 @@ int f1,f2,*f3;
 GENERIC c1,c2,*c3;
 {
   int result=0;
-  int v1,v2,v3;
+  unsigned int v1,v2,v3; /* 21.12 */
   ptr_int_list cd1,cd2,*cd3; /* sort codes */
 
   /* First, the cases where c1 & c2 are ptr_definitions: */
@@ -1362,8 +1364,8 @@ GENERIC c1,c2,*c3;
     *cd3 = STACK_ALLOC(int_list);
     (*cd3)->next=NULL;
     
-    v1=(int)(cd1->value);
-    v2=(int)(cd2->value);
+    v1=(unsigned)(cd1->value); /* 21.12 */
+    v2=(unsigned)(cd2->value); /* 21.12 */
     v3=v1 & v2;
     (*cd3)->value=(GENERIC)v3;
     
@@ -1371,9 +1373,9 @@ GENERIC c1,c2,*c3;
       if (v3<v1 && v3<v2)
         result=4;
       else if (result!=4)
-        if (v1<v2)
+        if (~v1 | v2) /* Prev: if (v1<v2) 21.12 */
           result=2;
-        else if (v1>v2)
+        else if (v1 | ~v2) /* Prev: if (v1>v2) 21.12 */
           result=3;
         else
           result=1;
@@ -1420,7 +1422,7 @@ ptr_int_list *c3;
 {
   ptr_int_list c1,c2;
   int result=0;
-  int v1,v2,v3;
+  unsigned int v1,v2,v3; /* 21.12 */
 
   *c3=NULL;
   
@@ -1459,9 +1461,9 @@ ptr_int_list *c3;
           if (v3<v1 && v3<v2)
             result=4;
           else if (result!=4)
-            if (v1<v2)
+            if (~v1 | v2) /* Prev: if (v1<v2) 21.12 */
               result=2;
-            else if (v1>v2)
+            else if (v1 | ~v2) /* Prev: if (v1>v2) 21.12 */
               result=3;
             else
               result=1;

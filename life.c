@@ -36,7 +36,7 @@ void exit_if_true(exitflag)
 int exitflag;
 {
   if (exitflag) {
-    printf("\n\n*** Execution is not allowed to continue.\n");
+    Errorline("\n\n*** Execution is not allowed to continue.\n"); /* 21.1 */
     exit_life(TRUE);
   }
 }
@@ -86,11 +86,12 @@ char **argv;
   ptr_psi_term s;  
   ptr_stack save_undo_stack;
   int sort,exitflag;
-  char c;
+  int c; /* 21.12 (prev. char) */ 
   
   arg_c=argc;
   arg_v=argv;
   
+  quietflag = (argc>=2) ? !strcmp(argv[1],"-q") : FALSE; /* 21.1 */
   init_io();
   init_memory();
   exit_if_true(!mem_base || !other_base);
@@ -131,7 +132,7 @@ char **argv;
     setjmp(env);
     /* printf("%ld\n",(long)(stack_pointer-mem_base)); */ /* 8.10 */
     init_system(); 
-    init_trace();
+    /* init_trace(); 13.1 */
 
     begin_terminal_io();
     var_occurred=FALSE;
@@ -173,7 +174,7 @@ char **argv;
         undo(save_undo_stack); /* 17.8 */
         var_occurred=FALSE; /* 18.8 */
         encode_types();
-        printf(assert_ok?"\n*** Yes\n":"\n*** No\n");
+        Infoline(assert_ok?"\n*** Yes\n":"\n*** No\n"); /* 21.1 */
       }
     }
   } while (!exitflag);

@@ -295,7 +295,7 @@ int copy_flag,heap_flag;
       if (heap_pointer-stack_pointer < COPY_THRESHOLD) {
         Errorline("psi-term too large -- get a bigger Life!\n");
         abort_life(TRUE);
-        longjmp(env); /* Back to main loop */
+        longjmp(env,0); /* 18.1 */ /* Back to main loop */
       }
       if (copy_flag==EVAL_FLAG && !t->type->evaluate_args) /* 24.8 25.8 */
         local_copy_flag=QUOTE_FLAG; /* All arguments will be quoted 24.8 */

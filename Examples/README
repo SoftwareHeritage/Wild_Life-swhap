@@ -1,38 +1,56 @@
-Copyright 1992 Digital Equipment Corporation
+Copyright 1992-93 Digital Equipment Corporation
 All Rights Reserved
 
-Partial list of example programs
---------------------------------
+
+Example programs
+----------------
 
 Programs that use the X interface:
 
-Flowers/flowers	  Flowers application.
+flowers	 	  Flower drawing application (see Flowers.doc).
 boxes		  Solving a 2D bin-packing problem.
 queens		  Solving the N-queens problem.
 
 Other programs:
 
-Parser/parser	  LIFE parser.
-Parser/loader	  Definition of 'load' using the LIFE parser.
+parser	  	  LIFE parser (see Parser.doc).
+tokenizer	  LIFE tokenizer (see Tokenizer.doc).
+loader		  File loading using the LIFE parser (see Loader.doc).
+shell		  Powerful user shell (see Shell.doc).
+expander	  Extended DCG preprocessor (see Expander.doc).
+schedule	  PERT scheduler (see Schedule.doc).
 gauss		  Incremental Gaussian equation solver.
-Schedule/schedule PERT scheduler.
+solve		  The SEND+MORE=MONEY puzzle.
+nl		  Simple natural language parser.
+xxxooo		  xxxooo puzzle (this file is Prolog-compatible).
+machine		  Simulation of the PRL snack machine (in French).
+magic		  Naive magic square solver.
+prime		  Prime numbers.
 hamming		  Hamming problem.
 dictionary	  Dictionary insertion/lookup routine.
-solve		  SEND+MORE=MONEY puzzle.
-xxxooo		  xxxooo puzzle.
+soap		  Illustration of type constraints.
+inherit		  Illustration of unification and type inheritance.
+school		  Illustration of unification and type inheritance.
+happy		  Illustration of unification and type inheritance.
 
 
 How to load and run a program
 -----------------------------
 
-The program prog is loaded with the query:
+For example, the Flowers application is loaded with the query:
 
-	> load("prog")?
+	> load(flowers)?
 
-This will load the file prog.lf as well as any auxiliary files that
-are necessary.  For example:
+This will load the file flowers.lf as well as all auxiliary files that
+are necessary.  If the filename contains non-alphanumeric characters,
+it must be surrounded by quotes or double-quotes.
 
-	> load("Flowers/flowers")?
 
-will load the Flowers application.  Read the file to find out how to
-run the program.
+Notes
+-----
+
+The shell program is the only one to use the builtins defined
+in the source file raw.c; if this source file is left out then
+only the shell will stop working.  The file raw.c defines raw
+(i.e., unbuffered) terminal I/O and is dependent on low-level
+system calls.  It is the most non-portable part of the system.

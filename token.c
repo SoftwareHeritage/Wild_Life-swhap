@@ -37,8 +37,8 @@ FILE *input_stream;
 string input_file_name;
 int line_count;
 int start_of_line;
-char saved_char;
-char old_saved_char;
+int saved_char; /* 11.2 */
+int old_saved_char; /* 11.2 */
 ptr_psi_term saved_psi_term;
 ptr_psi_term old_saved_psi_term;
 int eof_flag;
@@ -392,7 +392,7 @@ void init_parse_state()
 
 static int inchange, outchange;
 static FILE *out;
-static ptr_psi_term old_state;
+ptr_psi_term old_state; /* 14.1 */
 
 
 
@@ -414,7 +414,7 @@ void begin_terminal_io()
   }
 
   if (inchange) {
-    old_state=input_state;
+    old_state=input_state; 
     open_input_file("stdin");
   }
 }
@@ -429,6 +429,7 @@ void end_terminal_io()
   if (inchange) {
     input_state=old_state;
     restore_state(old_state);
+    old_state=NULL; /* 14.1 */
   }
   if (outchange)
     output_stream=out;
@@ -599,8 +600,7 @@ int read_char()
     if (start_of_line) {
       start_of_line=FALSE;
       line_count++;
-      if (input_stream==stdin)
-        printf("%s",prompt);
+      if (input_stream==stdin) Infoline("%s",prompt); /* 21.1 */
     }
      
     c=fgetc(input_stream);
@@ -759,7 +759,7 @@ char c;
 */
 void read_name(tok,c,f,typ)
 ptr_psi_term tok;
-char c;
+int c; /* 21.12 (prev. char) */
 int (*f)();
 ptr_definition typ;
 {
@@ -776,7 +776,7 @@ ptr_definition typ;
   
   do {
     c=read_char();
-    flag=(*f)(c);
+    flag=(*f)((char)c);
     if (flag) {
       if (store)
 	if (len==STRLEN) {
@@ -894,7 +894,7 @@ void read_token_main(tok, for_parser)
 ptr_psi_term tok;
 int for_parser;
 {
-  char c, c2;
+  int c, c2; /* 21.12 (prev. char) */
   ptr_node n;
   /* char *p="?"; */
   char p[2];

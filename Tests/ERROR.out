@@ -18,11 +18,8 @@ arith7.diff
 *** Error: division by zero in real / 0.
 arith8.diff
 arith9.diff
-*** Garbage Collections: 2
 assert1.diff
-*** Garbage Collections: 1
 assert2.diff
-*** Garbage Collections: 6
 assert3.diff
 assert4.diff
 bagof1.diff
@@ -46,15 +43,14 @@ copy1.diff
 copy2.diff
 copy3.diff
 curry1.diff
-*** Garbage Collections: 8
 curry2.diff
 curry3.diff
 curry4.diff
 curry5.diff
 cut1.diff
 cut2.diff
-*** Garbage Collections: 4
 cut3.diff
+cut4.diff
 cycles1.diff
 cycles2.diff
 decl.diff
@@ -76,7 +72,6 @@ disj3.diff
 disj4.diff
 disj5.diff
 disj6.diff
-*** Garbage Collections: 2
 dissolve.diff
 *** Error: the user-defined predicate 'p' may not be changed.
 *** Error: the user-defined predicate 'p' may not be changed.
@@ -85,7 +80,6 @@ dissolve.diff
 dynstat.diff
 *** Syntax error near line 4: bad expression.
 eoftest.diff
-*** Garbage Collections: 12
 fact.diff
 fail.diff
 feature.diff
@@ -101,9 +95,7 @@ freeze4.diff
 function1.diff
 function2.diff
 fusil.diff
-*** Garbage Collections: 9
 gauss.diff
-*** Garbage Collections: 74
 gctest.diff
 genint.diff
 glb.diff
@@ -128,12 +120,10 @@ listing1.diff
 listing2.diff
 loadquery.diff
 long.diff
-*** Garbage Collections: 12
 longstr.diff
 loop.diff
 lub.diff
 machine.diff
-*** Garbage Collections: 3
 magic.diff
 makestr.diff
 mort.diff
@@ -171,7 +161,6 @@ person2.diff
 posint.diff
 preparser.diff
 *** Warning: extending definition of sort 'int'.
-*** Garbage Collections: 15
 prime.diff
 print1.diff
 print2.diff
@@ -189,25 +178,19 @@ query_decl.diff
 resid1.diff
 resid2.diff
 retract1.diff
-*** Garbage Collections: 1
 retract2.diff
-*** Garbage Collections: 1
 retract3.diff
-*** Garbage Collections: 1
 retract4.diff
-*** Garbage Collections: 1
 retract5.diff
 retract6.diff
 retract7.diff
 rootsort.diff
 schedule1.diff
-*** Garbage Collections: 7
 schedule2.diff
 school.diff
 self.diff
 share.diff
 simp_eqn.diff
-*** Garbage Collections: 7
 smalltwente.diff
 smm.diff
 soap.diff
@@ -222,14 +205,11 @@ sortcycle4.diff
 *** Error: there is a cycle in the sort hierarchy.
 *** Cycle: [j <| o <| e <| j]
 sortcycle5.diff
-*** Garbage Collections: 2
 str.diff
 str2psi.diff
 strbug.diff
-*** Garbage Collections: 6
 streams.diff
 subs.diff
-*** Garbage Collections: 12
 subsort.diff
 t3201.diff
 t3202.diff
@@ -243,10 +223,10 @@ t4105.diff
 t4202.diff
 t4502.diff
 t4505.diff
-*** Garbage Collections: 6
 
 *** OUT OF MEMORY ***
 
+*** Abort
 t8101.diff
 *** Error: square root of negative number in sqrt(-1).
 *** Error: division by zero in 1 / 0.
@@ -256,16 +236,15 @@ t8102.diff
 t8103.diff
 t8104.diff
 *** Warning: extending definition of sort 'int'.
-*** Garbage Collections: 3
 
 *** OUT OF MEMORY ***
 
+*** Abort
 t8105.diff
 tan.diff
 test00.diff
 test03.diff
 test04.diff
-*** Garbage Collections: 2
 titi.diff
 tri_ins.diff
 tripeq.diff
@@ -273,30 +252,22 @@ unify.diff
 varlevel.diff
 varlevel2.diff
 wam.diff
-*** Garbage Collections: 4
 wambruno.diff
 wlife.diff
 write.diff
 writeq.diff
-*** Garbage Collections: 2
 z_comb.diff
-*** Garbage Collections: 70
 z_cut2.diff
-*** Garbage Collections: 10
 z_gcsimp.diff
-*** Garbage Collections: 7
 *** Error: psi-term too large -- get a bigger Life!
+*** Abort
 z_gctoken1.diff
-*** Garbage Collections: 6
 z_gctoken2.diff
-*** Garbage Collections: 2
 z_maurice.diff
-*** Garbage Collections: 23
 
 *** OUT OF MEMORY ***
 
+*** Abort
 z_nestdepth.diff
-*** Garbage Collections: 4
 z_power_4.diff
-*** Garbage Collections: 234
 z_pyth_gc.diff

@@ -1,0 +1,230 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                           UTILITIES
+%
+% This file contains a number of utilities used by the tokenizer and the 
+% parser. It is loaded automatically.
+%                                                                             
+% Author: Bruno Dumant    
+% 
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+%                                                                             
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% transform a psiterm into a string
+
+str(X) -> cond(is_value(X),strval(X),psi2str(X)).
+
+strval(S:string) -> S.
+strval(N:real) -> int2str(N).
+
+
+%%% This operator is syntactic sugar for project
+
+op(400,yfx,##)?
+X##Y -> project(Y,X).
+
+
+%%% setq for functions WITH arguments
+
+non_strict(set_new_func_arg) ?
+set_new_func_arg(A,B) :-
+	R = rootsort(A),
+	dynamic(R),
+	assert((A -> B)).
+
+non_strict(set_func_arg) ?
+set_func_arg(A,B) :- 
+	R = rootsort(A),
+	retract(( R -> @ )),
+	assert(( A -> B )). 
+
+%%% hashing
+
+add_in_hash( Name, X, Y) :-
+	T = make_hash_name(Name,X),
+	setq(T,Y).
+
+find_in_hash(Name, X, Y) :-
+	T = make_hash_name(Name,X),
+	is_function(T),
+	Y = eval(T).
+	
+make_hash_name(Name,X) ->
+	str2psi(strcon(str(X),Name)).
+
+non_strict(ns) ?
+
+%%% gen table:
+
+non_strict(gen_table) ?
+
+gen_table([],Func,Name,Table) :-
+	!,
+	assert(( Name -> Table )).
+gen_table([A|B],Func,Name,Table) :-
+	project(A,Table) = Func(A),
+	gen_table(B,Func,Name,Table).
+
+non_strict(gen_interval_table) ?
+
+gen_interval_table(Begin,End,Func,Name,Table) :-
+	Begin =< End,
+	project(Begin,Table) = Func(Begin),
+	NewB = Begin + 1,
+	gen_interval_table(NewB,End,Func,Name,Table).
+gen_interval_table(Begin,End,Func,Name,Table) :-
+	assert(( Name -> Table )).
+
+
+charac(Z) -> psi2str(chr(Z)) .
+
+
+%%% list of the features of a term
+
+feats(L) -> map( project( 2 => L), features(L)).
+
+
+
+%%% getting rid of unnecessary succeed statements
+
+op( 1000, xfy, comma) ?
+
+A comma B -> cond( A :=< succeed, B, cond( B :=< succeed, A, (A,B))).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% List manipulation utilities
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+merge_ad([],L) -> L.
+merge_ad([A|B],C) -> 
+	cond( member_ad(C,A),
+	      merge_ad(B,C),
+	      [A|merge_ad(B,C)]).
+
+no_redundant_ad([]) -> [].
+no_redundant_ad([A|B]) -> 
+	cond( member_ad(B,A),
+	      no_redundant_ad(B),
+	      [A|no_redundant_ad(B)]).
+
+member_ad([],A) -> false.
+member_ad([B|C],A) ->
+	cond( A === B,
+	      true,
+	      member_ad(C,A)).
+
+inter_ad([],L) -> [].
+inter_ad([A|B],C) ->
+	cond( member_ad(C,A),
+	      [A| inter_ad(B,C)],
+	      inter_ad(B,C)).
+
+%
+% diff_list_ad(L1,L2,L3): L3 is L2 \ (L1 inter L2)
+%
+
+diff_list_ad([],L2,L2) :- !.
+diff_list_ad(L1:[A|NewL1],L2,RestL2) :-
+	cond( memberAndRest_ad(A,L2,InterRestL2),
+	      diff_list_ad(NewL1,InterRestL2,RestL2),
+	      diff_list_ad(NewL1,L2,RestL2)).
+
+%
+% memberAndRest(A,List,Rest) returns true if A is a member of List, with Rest
+% containing the other members of List. 
+%
+
+memberAndRest_ad(A,[],Rest) -> false.
+memberAndRest_ad(A,[B|C],Rest) ->
+	cond( A === B,
+	      ( true | Rest = C),
+	      memberAndRest_ad(A,C,OtherRest) | Rest = [B|OtherRest] ).
+
+%
+% suppress_ad(List,Ad) returns a new list with no member at adress Ad
+%
+
+supress_ad([],Ad) -> [].
+suppress_ad([A|B],Ad) ->
+	cond( A === Ad,
+	      suppress_ad(B,Ad),
+	      [A|suppress_ad(B,Ad)]).
+
+
+
+%
+% diff_list(L1,L2,L3): L3 is L2 \ (L1 inter L2)
+%
+
+diff_list([],L2,L2) :- !.
+diff_list(L1:[A|NewL1],L2,RestL2) :-
+	cond( memberAndRest(A,L2,InterRestL2),
+	      diff_list(NewL1,InterRestL2,RestL2),
+	      diff_list(NewL1,L2,RestL2)).
+
+%
+% memberAndRest(A,List,Rest) returns true if A is a member of List, with Rest
+% containing the other members of List. 
+%
+
+memberAndRest(A,[],Rest) -> false.
+memberAndRest(A,[B|C],Rest) ->
+	cond( prove( A =B),
+	      ( true | Rest = C),
+	      memberAndRest(A,C,OtherRest) | Rest = [B|OtherRest] ).
+
+%
+% member in a list of sorts, using :==
+%
+
+sort_member(X,[Y|S]) -> cond( X :== Y,
+	                      true,
+			      sort_member(X,S)).
+sort_member(X,[]) -> false.
+
+
+%%% flatten a list of lists
+
+flatten([A|B]) -> append(A,flatten(B)).
+flatten([]) -> [].
+
+%%% part_sort(L1,L2,L3,L4,L5): L3 is L1 inter L2, L4 is L1 \ L3, L5 is L2 \ L3
+
+part_sort([],L2,[],[],L2) :- !.
+part_sort(L1:[A|NewL1],L2,Intersect,RestL1,RestL2) :-
+	cond( memberAndRest_sort(A,L2,InterRestL2),
+	      (
+		  part_sort(NewL1,InterRestL2,Intersect2,RestL1,RestL2),
+		  Intersect = [A|Intersect2]
+	      ),
+	      (
+		  part_sort(NewL1,L2,Intersect,RestNewL1,RestL2),
+		  RestL1 = [A|RestNewL1]
+	      )).
+
+
+memberAndRest_sort(A,[],Rest) -> false.
+memberAndRest_sort(A,[B|C],Rest) ->
+	cond( A :== B,
+	      ( true | Rest = C),
+	      memberAndRest_sort(A,C,OtherRest) | Rest = [B|OtherRest] ).
+
+
+%%% difference of list of sorts: sorts_list_diff(A,B) -> A \ (A inter B)
+
+sorts_list_diff([A|B],C) ->
+	cond(   sort_member(A,C),
+	        sorts_list_diff(B,C),
+		[A|sorts_list_diff(B,C)]
+	    ).
+sorts_list_diff([],L) -> [].
+
+

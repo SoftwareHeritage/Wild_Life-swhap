@@ -65,7 +65,7 @@ static int c_mult()
       if(success)
 	switch(num1+num2*2+num3*4) {
 	case 0:
-          residuate3(arg1,arg2,arg3);
+          residuate3_double(arg1,arg2,arg3); /* 20.1 */
 
 	  /* if(arg1==arg3)
 	    success=unify_real_result(arg2,(REAL)1);
@@ -73,7 +73,7 @@ static int c_mult()
 	    if(arg2==arg3)
 	      success=unify_real_result(arg1,(REAL)1);
 	    else
-	      residuate2(arg1,arg3);
+	      residuate2_double(arg1,arg3); 20.1
 	  */
 	  break;
 	case 1:
@@ -84,7 +84,7 @@ static int c_mult()
           else if (val1!=1.0 && arg2==arg3) /* 9.9 */
 	    success=unify_real_result(arg3,(REAL)0);
 	  else
-	    residuate2(arg2,arg3);
+	    residuate2_double(arg2,arg3); /* 20.1 */
 	  break;
 	case 2:
 	  if (val2==1.0)
@@ -94,7 +94,7 @@ static int c_mult()
           else if (val2!=1.0 && arg1==arg3) /* 9.9 */
 	    success=unify_real_result(arg3,(REAL)0);
 	  else
-	    residuate2(arg1,arg3);
+	    residuate2_double(arg1,arg3); /* 20.1 */
 	  break;
 	case 3:
 	  success=unify_real_result(arg3,val1*val2);
@@ -110,7 +110,7 @@ static int c_mult()
           }
 	  else {
             /* Case A*B=0 is not dealt with because it is nondeterministic */
-	    residuate2(arg1,arg2);
+	    residuate2_double(arg1,arg2); /* 20.1 */
           }
 	  break;
 	case 5:
@@ -172,7 +172,7 @@ static int c_div()
       if (success)
 	switch(num1+num2*2+num3*4) {
 	case 0:
-	  residuate3(arg1,arg2,arg3);
+	  residuate3_double(arg1,arg2,arg3); /* 20.1 */
 	  break;
 	case 1:
 	  if (val1) {
@@ -183,12 +183,12 @@ static int c_div()
 		success=FALSE; /* A/B=B where A<0 */
             }
 	    else
-	      residuate2(arg2,arg3);
+	      residuate2_double(arg2,arg3); /* 20.1 */
           }
           else if (arg2==arg3) /* 9.9 */
             success=unify_real_result(arg2,(REAL)0);
           else
-            residuate2(arg2,arg3);
+            residuate2_double(arg2,arg3); /* 20.1 */
 	  break;
 	case 2:
 	  if (val2) {
@@ -197,7 +197,7 @@ static int c_div()
             else if (arg1==arg3) /* 9.9 */
               success=unify_real_result(arg1,(REAL)0);
             else
-	      residuate2(arg1,arg3);
+	      residuate2_double(arg1,arg3); /* 20.1 */
           }
 	  else {
 	    success=FALSE;
@@ -220,7 +220,7 @@ static int c_div()
             else if (val3!=1.0 && arg1==arg2) /* 9.9 */
               success=unify_real_result(arg1,(REAL)0);
             else
-	      residuate2(arg1,arg2);
+	      residuate2_double(arg1,arg2); /* 20.1 */
           }
           else
             success=unify_real_result(arg1,(REAL)0);
@@ -355,7 +355,7 @@ static int c_sqrt()
       if (success)
 	switch(num1+num3*4) {
 	case 0:
-	  residuate2(arg1,arg3);
+	  residuate2_double(arg1,arg3); /* 20.1 */
 	  break;
 	case 1:
 	  if (val1>=0)
@@ -411,7 +411,7 @@ int trigflag;
       if (success)
         switch(num1+num3*4) {
         case 0:
-          residuate2(arg1,arg3);
+          residuate2_double(arg1,arg3); /* 20.1 */
           break;
         case 1:
           ans=(trigflag==SINFLAG?sin(val1):
@@ -508,7 +508,7 @@ static int c_bit_and()
       if(success)
 	switch(num1+num2*2+num3*4) {
 	case 0:
-	  residuate2(arg1,arg2);
+	  residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 1:
           if (bit_and_warning(arg1,val1)) return (c_abort());
@@ -530,7 +530,7 @@ static int c_bit_and()
 	  success=unify_real_result(arg3,(REAL)(((int)val1) & ((int)val2)));
 	  break;
 	case 4:
-	  residuate2(arg1,arg2);
+	  residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 5:
           if (bit_and_warning(arg1,val1)) return (c_abort());
@@ -590,7 +590,7 @@ static int c_bit_or()
 	switch(num1+num2*2+num3*4) {
 	case 0:
         case 4:
-	  residuate2(arg1,arg2);
+	  residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 1:
         case 5:
@@ -667,7 +667,7 @@ int dir;
 	switch(num1+num2*2+num3*4) {
 	case 0:
         case 4:
-	  residuate2(arg1,arg2);
+	  residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 1:
         case 5:
@@ -734,7 +734,7 @@ static int c_mod()
 	switch(num1+num2*2+num3*4) {
 	case 0:
 	case 4:
-	  residuate2(arg1,arg2);
+	  residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 1:
 	case 5:
@@ -809,14 +809,14 @@ static int c_add()
           else if (arg2==arg3)
 	    success=unify_real_result(arg1,(REAL)0);
           else
-	    residuate3(arg1,arg2,arg3);
+	    residuate3_double(arg1,arg2,arg3); /* 20.1 */
 	  break;
 	case 1:
 	  if (val1) {
             if (arg2==arg3) /* 8.9 */
               success=FALSE;
             else
-	      residuate2(arg2,arg3);
+	      residuate2_double(arg2,arg3); /* 20.1 */
           }
           else
 	    push_goal(unify,arg2,arg3,NULL);
@@ -826,7 +826,7 @@ static int c_add()
             if (arg1==arg3) /* 8.9 */
               success=FALSE;
             else
-	      residuate2(arg1,arg3);
+	      residuate2_double(arg1,arg3); /* 20.1 */
           }
           else
 	    push_goal(unify,arg1,arg3,NULL);
@@ -838,7 +838,7 @@ static int c_add()
 	  if (arg1==arg2)
 	    success=unify_real_result(arg1,val3/2);
 	  else
-	    residuate2(arg1,arg2);
+	    residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 5:
 	  success=unify_real_result(arg2,val3-val1);
@@ -858,7 +858,7 @@ static int c_add()
 	if(success)
 	  switch(num1+4*num3) {
 	  case 0:
-	    residuate2(arg1,arg3);
+	    residuate2_double(arg1,arg3); /* 20.1 */
 	    break;
 	  case 1:
 	    success=unify_real_result(arg3,val1);
@@ -917,20 +917,20 @@ static int c_sub()
 	  else if (arg1==arg2)
 	    success=unify_real_result(arg3,(REAL)0);
 	  else
-	    residuate3(arg1,arg2,arg3);
+	    residuate3_double(arg1,arg2,arg3); /* 20.1 */
 	  break;
 	case 1:
 	  if (arg2==arg3)
 	    success=unify_real_result(arg3,val1/2);
           else
-	    residuate2(arg2,arg3);
+	    residuate2_double(arg2,arg3); /* 20.1 */
 	  break;
 	case 2:
 	  if (val2) {
             if (arg1==arg3) /* 9.9 */
               success=FALSE;
             else
-	      residuate2(arg1,arg3);
+	      residuate2_double(arg1,arg3); /* 20.1 */
           }
           else
 	    push_goal(unify,arg1,arg3,NULL);
@@ -942,7 +942,7 @@ static int c_sub()
 	  if (arg1==arg2)
 	    success=(val3==0);
           else if (val3)
-	    residuate2(arg1,arg2);
+	    residuate2_double(arg1,arg2); /* 20.1 */
 	  else
 	    push_goal(unify,arg1,arg2,NULL);
 	  break;
@@ -964,7 +964,7 @@ static int c_sub()
 	if(success)
 	  switch(num1+4*num3) {
 	  case 0:
-	    residuate2(arg1,arg3);
+	    residuate2_double(arg1,arg3); /* 20.1 */
 	    break;
 	  case 1:
 	    success=unify_real_result(arg3,-val1);
@@ -1008,7 +1008,7 @@ static int c_log()
       if(success)
 	switch(num1+num3*4) {
 	case 0:
-	  residuate2(arg1,arg3);
+	  residuate2_double(arg1,arg3); /* 20.1 */
 	  break;
 	case 1:
 	  if (val1>0)
@@ -1065,7 +1065,7 @@ static int c_exp()
       if(success)
 	switch(num1+num3*4) {
 	case 0:
-	  residuate2(arg1,arg3);
+	  residuate2_double(arg1,arg3); /* 20.1 */
 	  break;
 	case 1:
 	  success=unify_real_result(arg3,exp(val1));

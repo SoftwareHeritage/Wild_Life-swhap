@@ -1,12 +1,12 @@
-Life package -- created Thu Jul  9 10:31:04 MET DST 1992 by vanroy
+Life package -- created Thu Dec 10 16:08:31 MET 1992 by vanroy
 current owner vanroy
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The Wild_LIFE interpreter version 0.9
--------------------------------------
+The Wild_Life interpreter version 0.91
+--------------------------------------
 
-Copyright 1992 Digital Equipment Corporation, Paris Research Laboratory.
+Copyright 1991-93 Digital Equipment Corporation, Paris Research Laboratory.
 All Rights Reserved.
 
 Written by Peter Van Roy, Richard Meyer, and Jean-Claude Herve, with
@@ -14,14 +14,14 @@ contributions from Hassan Ait-Kaci, Seth Copen Goldstein, and Abder Aggoun.
 The user manual was written by Hassan Ait-Kaci, Richard Meyer, and Peter
 Van Roy.
 
-The Wild_LIFE interpreter is the first implementation of the LIFE
+The Wild_Life interpreter is the first implementation of the LIFE
 language available to the general public.  It is a product of the
 Paradise project at DEC PRL.  Research activities of Paradise deal
 with issues pertaining to general purpose programming by specifying
 executable constraints, including theoretical foundations, implementation,
 and development of applications.
 
-Wild_LIFE has been extensively tested on DECstations running Ultrix.  We
+Wild_Life has been extensively tested on DECstations running Ultrix.  We
 are committed to support this system and we are working on substantial
 improvements.  We would appreciate for you to send your name and address
 to life-request@prl.dec.com.  That will make it easier for us to notify
@@ -30,28 +30,73 @@ reports, functionality, extensions, user manual, user interface, examples,
 etc.  If you extend the system, we would like to know exactly what you did
 and why.
 
-*** WARNING: The X interface has been tested only on DECstations.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-*** WARNING: To be able to run all the example programs on a DECstation,
-    it is mandatory that you install *all* the MIT X fonts.  Consult your
-    local X guru!
+Portability:
 
-*** URGENT REQUEST: We do not have an adequate environment to test this
-    system on multiple platforms (e.g., SPARCstations).  We would greatly
-    appreciate if someone would try installing it on other platforms and
-    tell us what modifications were necessary.  In particular, we would
-    appreciate someone getting the X interface to work on SPARCstations.
+The Wild_Life interpreter with X interface has been tested by us on
+DECstations.  It should work without any problems on SPARCstations and
+RS/6000 systems.  This is thanks to several friendly users who have sent
+us the (small) modifications necessary.  It runs successfully on a Silicon
+Graphics Indigo if the file raw.c is skipped.
+
+If you get the interpreter to work on any other system, we would appreciate
+it if you would send us a list of the changes that were necessary and if you
+would run the test suite and notify us of any non-trivial differences with
+the correct output.
+
+To compile Wild_Life without the X interface, remove the X11 options
+from CCFLAGS and LOADFLAGS in the Makefile.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The LIFE language
+Major changes in version 0.91 from version 0.90:
+
+1. It accepts the '-q' (q for quiet) command line option.  Enabling this
+   option results in completely silent output, i.e., no user interface
+   information (prompts, variable values, Yes/No messages, startup banner,
+   exit banner) will be printed.  This allows Wild_Life to be used as
+   an element of a Unix pipe with minimal hassle.  Errors, warnings, trace
+   messages, program output (with the write statement etc.), and file I/O are
+   still output.  As before, errors and warnings are output to stderr, trace
+   information to stdout.  In 'verbose' mode the user interface information
+   returns, which allows the user to inspect a misbehaving Wild_Life when
+   it is being used as a pipe element.
+
+2. Garbage collection messages are only printed in 'verbose' mode.
+
+3. It has a user-definable abort capability.  A call to 'setq(aborthook,foo)'
+   makes 'foo' the abort predicate.  When the system does an abort, it
+   will initialize itself and then call 'foo' as the first goal.  This
+   ability is used in the 'shell' example program.  A call to
+   'setq(aborthook,abort)' restores the internal abort.  If aborthook is
+   undefined, then the internal abort is used.
+
+4. It is more portable: The system has been modified to compile and run under
+   SPARCstations and RS/6000 systems.
+
+5. The example program 'shell' has been added and the documentation of
+   example programs has been improved.
+
+6. It has various small bug fixes:
+   a. Fixed the Makefile: Removing X11 from the Makefile now correctly
+      builds a system without an X interface.
+   b. Fixed a bug in the glb calculation of sorts.
+   c. Fixed a bug in the '<-' built-in.
+   d. Fixed a bug in the '=\=' and '=:=' built-ins.
+   e. Fixed two bugs in xpred.c.
+   f. Fixed an obscure GC bug.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The LIFE language:
 
 LIFE (Logic, Inheritance, Functions, and Equations) is an experimental
 programming language with a powerful facility for structured type
 inheritance. It reconciles styles from functional programming, logic
 programming, and object-oriented programming. It subsumes, and fully
 contains the functionality of, the precursor languages LOGIN and Le_Fun.
-The syntax of Wild_LIFE has been kept as close as possible to that of the
+The syntax of Wild_Life has been kept as close as possible to that of the
 Edinburgh family of Prolog so that Prolog compatibility is easy to
 achieve.
 
@@ -64,7 +109,7 @@ of relational and functional expressions which specify structural
 dependencies on objects.
 
 The basic data structure is the order-sorted feature term, or psi-term.
-Psi-terms are a natural generalisation of first-order terms. A psi-term may
+Psi-terms are a natural generalization of first-order terms. A psi-term may
 be viewed as being to a Prolog term what an open-ended dynamic record is to
 a static array.  That is, a psi-term has named fields and fields may be
 added at run-time.  Psi-terms may be cyclic, which means they are rooted
@@ -87,7 +132,7 @@ elegant programming style.
 
 Installation:
 
-1. Uncompress and untar the file Life.tar.Z.  This creates the Life/
+1. Uncompress and untar the file Life0.91.tar.Z.  This creates the Life/
    directory.
 2. Change directory to the Life/ directory (which contains this README file).
 3. Run 'make' to create the executable 'wild_life'.  The complete system
@@ -114,8 +159,10 @@ Remarks:
    directory being in a different path.  These small differences may be
    ignored.  The Tests/ directory is rather large (about 1.6 MB).  It may
    be removed to save space.
-4. By default, the system has a memory space of 4 MB.  This can be changed
-   by redefining the MEM_SIZE parameter in the file extern.h.
+4. By default, the system has a memory space of 4 MB and has a virtual
+   image of somewhat more than twice this size (because of the dual-space
+   garbage collection algorithm used).  Size of the memory space can be
+   changed by redefining the MEM_SIZE parameter in the file extern.h.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -137,15 +184,20 @@ of report number 12, send mail to doc-server@prl.dec.com with subject
 "send report 12".  To get the printed version you must put your name and
 address in the message body.
 
-All articles and reports relevant to Paradise.
-         Command for Online Version:  send paradise
-         Command for Printed Version: order paradise
-
 A list of all articles published by PRL:
          Command for Online Version:  send index articles
 
 A list of all reports published by PRL:
          Command for Online Version:  send index reports
+
+All articles and reports relevant to Paradise.
+         Command for Online Version (1):  send paradise
+         Command for Online Version (2):  send paradise.big
+         Command for Printed Version: order paradise
+
+	 (1) If your mailer can't handle large files (be prepared to
+	     receive many small files).
+	 (2) If your mailer can handle large files.
 
 Research Report Number 11: Towards a Meaning of LIFE.
 Hassan Ait-Kaci and Andreas Podelski. June 1991.
@@ -160,21 +212,20 @@ for Constraint Logic Programming. Gert Smolka. June 1991.
 
 Research Report Number 13: Functions as Passive Constraints
 in LIFE. Hassan Ait-Kaci and Andreas Podelski. June 1991.
-(will be sent as soon as available)
          Command for Online Version:  send report 13
          Command for Printed Version: order report 13
 
 Hassan Ait-Kaci, "A Glimpse of Paradise",
 Proceedings of the Workshop on Programming Languages of the 90's,
 Kiev, Ukraine, USSR (October, 1990).
-Lecture Notes in Computer Science, Springer-verlag, 1991
+Lecture Notes in Computer Science, Springer-Verlag, 1991
          Command for Online Version:  send article AIT1
          Command for Printed Version: order article AIT1
 
 Hassan Ait-Kaci, "An Overview of LIFE",
 Proceedings of the Workshop on Programming Languages of the 90's,
 Kiev, Ukraine, USSR (October, 1990).
-Lecture Notes in Computer Science, Springer-verlag, 1991
+Lecture Notes in Computer Science, Springer-Verlag, 1991
          Command for Online Version:  send article AIT2
          Command for Printed Version: order article AIT2
 
@@ -193,7 +244,7 @@ This program finds all assignments of different digits from 0 through 9
 to the letters in SEND+MORE=MONEY so that the addition is correct.
 
 % wild_life
-Wild_Life Interpreter Version 0.9 (Fri Oct  9 16:20:12 MET 1992)
+Wild_Life Interpreter Version 0.91 (Wed Jan 27 14:52:57 MET 1993)
 Copyright (C) 1991-92 Digital Equipment Corporation, Paris Research Laboratory
 No customizing file loaded.
 > load(solve)?
@@ -242,8 +293,8 @@ The most important known bugs:
    variable distinction: function calls do not change their arguments.
 
 3. The system is not complete for disentailment of equality constraints
-   introduced in the actual arguments of a function call.  However, it
-   *is* complete for disentailment of equality constraints in the function
+   that are introduced in the actual arguments of a function call.  However,
+   it *is* complete for disentailment of equality constraints in the function
    definition.  If you don't understand this, then this problem will most
    likely not affect you.
 
@@ -255,12 +306,12 @@ Relevant electronic mail addresses:
 
    life-users@prl.dec.com
 
-      This is a mailing list of people using LIFE or interested in
-      specific aspects of LIFE, whether theory, implementation, or
+      This is a moderated mailing list of people using LIFE or interested
+      in specific aspects of LIFE, whether theory, implementation, or
       applications. It is meant as a public forum to answer FAQ's and
       share programs and ideas. It is not meant to report bugs, although
       it may be used to ask public opinions about surprising behavior of
-      Wild_LIFE that may turn out to be a bug and to warn others against
+      Wild_Life that may turn out to be a bug and to warn others against
       confirmed bugs.
 
    life-request@prl.dec.com

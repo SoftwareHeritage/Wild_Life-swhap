@@ -8,6 +8,8 @@
 
 % Last modified on Tue Mar 31 14:23:09 1992 by Hassan
 
+% Three top level calls (t1, t2, t3) illustrate inheritance.
+
 delay_check(person)?
 
 :: P:person(sex => S:sex,friends => F) | friendly(F).

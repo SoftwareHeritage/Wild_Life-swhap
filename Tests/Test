@@ -6,7 +6,7 @@
 #set life = ~vanroy/LifePackage/src/wild_life
 
 foreach i ($argv)
-	(echo 'load("' $i:r.lf '")?' | noblank ; echo "" ; \
+	(echo 'load("' $i:r.lf '")?' | tr -d ' ' ; echo "" ; \
 	cat $i:r.in  ; echo "halt?") | \
         tee tmp | \
 	../wild_life | \

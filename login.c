@@ -35,7 +35,7 @@ unsigned int global_time_stamp=INIT_TIME_STAMP; /* 9.6 */
 
 ptr_goal goal_stack,aim;
 
-int verbose=FALSE;
+/* int verbose=FALSE; 21.1 */
 int goal_count;
 struct tms start_time,end_time;
 
@@ -356,6 +356,35 @@ GENERIC *p;
 }
 
 
+/* 20.1 */
+/******* PUSH_CHAR_PTR_VALUE(p)
+  Push the pair (P,*P) onto the stack of things to be undone (trail).
+  It needn't be done if P is greater than the latest choice point because in
+  that case memory is reclaimed.
+  This is a specialized version of push_char_ptr_value that assumes P
+  is a pointer to a character.
+*/
+void push_char_ptr_value(t,p)
+type_ptr t;
+char *p;
+{
+  ptr_stack n;
+  
+  assert(VALID_ADDRESS(p));
+  if ((GENERIC)p < (GENERIC)choice_stack
+      || (GENERIC)p > (GENERIC)stack_pointer) 
+  {
+    n=STACK_ALLOC(stack);
+    n->type=t;
+    n->a= (GENERIC)p;
+    n->b= (GENERIC)*p;
+    n->next=undo_stack;
+    undo_stack=n;
+  }
+}
+
+
+
 /******** PUSH_DEF_PTR_VALUE(q,p) (9.6)
   Same as push_ptr_value, but only for psi-terms whose definition field is
   being modified.  (If another field is modified, use push_ptr_value.)
@@ -640,7 +669,10 @@ ptr_stack limit;
     }
     else
 #endif
-      /* Restoring variable value on backtracking */
+    /* Restoring variable value on backtracking */
+    if (undo_stack->type == char_ptr) /* 20.1 */
+      *((char *)(undo_stack->a))=(char)undo_stack->b; /* 20.1 */
+    else
       *((GENERIC *)(undo_stack->a))=undo_stack->b;
     undo_stack=undo_stack->next;
   }
@@ -1068,8 +1100,10 @@ void show_count()
     printf("]");
   }
 
-  printf("\n");
-  stack_info(stdout);
+  if (NOTQUIET) { /* 21.1 */
+    printf("\n");
+    stack_info(stdout);
+  }
 
   goal_count=0;
 }
@@ -1236,6 +1270,7 @@ int eval_flag;
   ptr_node old1attr, old2attr;
   ptr_int_list new_code;
   ptr_int_list d=NULL;
+  int new_u_value, new_v_value; /* 20.1 */
   
   u=(ptr_psi_term )aim->a;
   v=(ptr_psi_term )aim->b;
@@ -1252,6 +1287,28 @@ int eval_flag;
   
   if (u!=v) {
     
+    /* Streams are not like other terms; they may only be passed as args.*/
+    if (u->type==inputfilesym || u->type==stream) { /* 14.1 */
+       if (!is_top(v)) {
+	 Errorline("attempt to unify a stream variable %P with %P.\n",u,v);
+	 success=FALSE;
+       } else {
+         push_psi_ptr_value(v,&(v->coref));
+         v->coref=u;
+       }
+       return success;
+    }
+    if (v->type==inputfilesym || v->type==stream) { /* 14.1 */
+       if (!is_top(u)) {
+	 Errorline("attempt to unify a stream variable %P with %P.\n",v,u);
+	 success=FALSE;
+       } else {
+         push_psi_ptr_value(u,&(u->coref));
+         u->coref=v;
+       }
+       return success;
+    }
+
     /**** Swap the two psi-terms to get them into chronological order ****/
     if (u>v) { tmp=v; v=u; u=tmp; }
     
@@ -1321,6 +1378,9 @@ int eval_flag;
       
       /**** Unify the values of INTs REALs STRINGs LISTs etc... ****/
       if (success) {
+	new_u_value = !u->value && v->value; /* 20.1 */
+	new_v_value = !v->value && u->value; /* 20.1 */
+
         /* LAZY-EAGER */
         if (u->value && !v->value && overlap_type(new_type,alist)) {
            lu=(ptr_list)u->value;
@@ -1389,7 +1449,7 @@ int eval_flag;
 	/* push_ptr_value(psi_term_ptr,&(v->coref)); 9.6 */
 	push_psi_ptr_value(v,&(v->coref));
 	v->coref=u;
-	
+
 	if (!equal_types(u->type,new_type)) {	      
 	  push_ptr_value(def_ptr,&(u->type));
           /* This does not seem to work right with cut.lf: */
@@ -1452,16 +1512,29 @@ int eval_flag;
 	      release_resid(v);
 	    break;
 	  default:
-	    printf("*** BUG: weird result from GLB: %d\n",compare);
+	    Errorline("*** BUG: weird result from GLB: %d\n",compare);
 	  }
 	}
-	else {
+	else if (FALSE) { /* 28.1 */
 	  /**** RELEASE RESIDUATIONS **** CORRECT ****/
           /* This version implements the correct semantics. */
-	  if (u->resid)
-	    release_resid(u);
-	  if (v->resid)
-	    release_resid(v);
+	  /* 20.1: Only release if information has been added */
+	  if (v->resid) {
+	    /* 20.1 */
+	    int vl=(more_u_attr || new_v_value || !equal_types(old2,new_type));
+	    release_resid_eq(v,vl);
+	    /* Move any remaining residuations to u: */
+	    if (!vl) append_resid(u,v);
+	  }
+	  if (u->resid) {
+	    /* 20.1 */
+	    int ul=(more_v_attr || new_u_value || !equal_types(old1,new_type));
+	    release_resid_eq(u,ul);
+	  }
+	}
+	else { /* 28.1 */
+	  if (u->resid) release_resid(u);
+	  if (v->resid) release_resid(v);
 	}
 	
         /**** Alternatives in a type disjunction ****/
@@ -1639,7 +1712,8 @@ int prove_aim()
               resid_vars=NULL;
               /* resid_limit=(ptr_goal )stack_pointer; 12.6 */
 
-              Traceline("prove built-in %P\n", thegoal);
+              if (thegoal->type!=tracesym) /* 26.1 */
+		Traceline("prove built-in %P\n", thegoal);
 
               /* RESPRED */ resid_aim=aim;
               /* Residuated predicate must return success=TRUE */
@@ -1937,7 +2011,8 @@ int what_next_aim()
 {
   int result=FALSE;
   ptr_psi_term s;
-  char c, c2, *pr;
+  int c, c2; /* 21.12 (prev. char) */
+  char *pr;
   int sort,cut=FALSE;
   int level,i;
   int eventflag;
@@ -1982,9 +2057,9 @@ int what_next_aim()
 #ifdef X11
   x_window_creation=FALSE;
 #endif
-  printf(aim->a?"\n*** Yes":"\n*** No");
+  Infoline(aim->a?"\n*** Yes":"\n*** No");
   show_count();
-  if (aim->a || level>0) print_variables();
+  if (aim->a || level>0) print_variables(NOTQUIET); /* 21.1 */
 
   if (level>0) {
     int lev=(MAX_LEVEL<level?MAX_LEVEL:level);
@@ -2392,7 +2467,7 @@ void main_prove()
         }
         else /* if (goal_stack) */ {
           undo(NULL); /* 8.10 */
-	  printf("\n*** No");
+	  Infoline("\n*** No"); /* 21.1 */
 	  /* printf("\n*** No (in main_prove)."); */
           show_count();
 #ifdef TS

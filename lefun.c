@@ -162,6 +162,21 @@ ptr_psi_term u,v;
 
 
 
+/******** RESIDUATE2_DOUBLE(u,v)
+  Residuate the current function on the two variables U and V.
+  Also assume equality constraint between U and V.
+*/
+void residuate2_double(u,v)
+ptr_psi_term u,v;
+{
+  if (v) {
+    residuate_double(u,v);
+    residuate_double(v,u);
+  } else
+    residuate(v);
+}
+
+
 /******** RESIDUATE3(u,v,w)
   Residuate the current function on the three variables U, V, and W.
 */
@@ -171,6 +186,26 @@ ptr_psi_term u,v,w;
   residuate(u);
   if (v && u!=v) residuate(v);
   if (w && u!=w && v!=w) residuate(w);
+} 
+
+
+/******** RESIDUATE3_DOUBLE(u,v,w)
+  Residuate the current function on the three variables U, V, and W.
+  Also assume equality constraint between U, V, W.
+*/
+void residuate3_double(u,v,w)
+ptr_psi_term u,v,w;
+{
+  if (v) {
+    residuate_double(u,v);
+    if (w) {
+      residuate_double(v,w);
+      residuate_double(w,u);
+    } else {
+      residuate_double(v,u);
+    }
+  } else
+    residuate(u);
 } 
 
 
@@ -247,9 +282,14 @@ ptr_psi_term var,othervar;
             (*r)->bestsort=rescode2; /* 21.9 */
 	  }
 	  if ((*r)->sortflag!=resflag2) {
-            push_ptr_value(int_ptr,&((*r)->sortflag));
+            push_char_ptr_value(char_ptr,&((*r)->sortflag)); /* 20.1 */
             (*r)->sortflag=resflag2; /* 21.9 */
 	  }
+	  /* 20.1 This statement handles the eqflag */
+	  if (!(*r)->eqflag) {
+	    push_char_ptr_value(char_ptr,&((*r)->eqflag));
+	    (*r)->eqflag=TRUE;
+          }
 	}
       }
       else {
@@ -262,7 +302,7 @@ ptr_psi_term var,othervar;
           (*r)->bestsort=rescode; /* 21.9 */
 	}
 	if ((*r)->sortflag!=resflag) {
-          push_ptr_value(int_ptr,&((*r)->sortflag));
+          push_char_ptr_value(char_ptr,&((*r)->sortflag)); /* 20.1 */
           (*r)->sortflag=resflag; /* 21.9 */
 	}
       }
@@ -285,12 +325,14 @@ ptr_psi_term var,othervar;
         return FALSE;
       }
       else {
+	(*r)->eqflag=TRUE; /* 20.1 */
 	(*r)->sortflag=resflag;
         (*r)->bestsort=rescode; /* 21.9 */
 	(*r)->value=resvalue; /* 6.10 */
       }
     }
     else {
+      (*r)->eqflag=FALSE; /* 20.1 */
       (*r)->sortflag=TRUE;
       (*r)->bestsort=(GENERIC)var->type; /* 21.9 */
       (*r)->value=(GENERIC)var->value; /* 6.10 */
@@ -382,39 +424,52 @@ void do_currying()
 
 
 
+/* 20.1 Many small changes were made here */
 /******** RELEASE_RESID(t)
   Release the residuations pending on the Residuation Variable T.
   This is done by simply pushing the residuated goals onto the goal-stack.
   A goal is not added if already present on the stack.
-  Two versions of this routine exist: one which trails t and one which never
-  trails t.
+  Three entry points to this routine exist:
+  - one which trails t and releases all residuations (release_resid).
+  - one which never trails t and releases all residuations
+    (release_resid_notrail).
+  - one which releases only equality residuations and trails only the
+    modifications to the residuation list (release_resid_eq).
 */
-void release_resid_main(t,trailflag)
+void release_resid_main(t,trailflag,lowered)
 ptr_psi_term t;
-int trailflag;
+int trailflag,lowered;
 {
   ptr_goal g;
-  ptr_residuation r;
+  ptr_residuation r,*pr;
   
-  if (r=t->resid) {
-    if (trailflag) push_ptr_value(resid_ptr,&(t->resid));
-    t->resid=NULL;
-    
+  pr = &(t->resid);
+  r = t->resid;
+  if (r) {
+    if (lowered) { /* Empty the resid. list */
+      if (trailflag) push_ptr_value(resid_ptr,pr);
+      *pr = NULL;
+    }
+
     while (r) {
       g=r->goal;
-      if (g->pending) {
-	
-	push_ptr_value(int_ptr,&(g->pending));
-	g->pending=FALSE;
-	
-	push_ptr_value(goal_ptr,&(g->next));
-	
-	g->next=goal_stack;
-	goal_stack=g;
-	
-        Traceline("releasing %P\n",g->a);
+      if (lowered || r->eqflag) { /* Then release the residuation */
+        if (g->pending) { /* Release a residuation only once */
+	  push_ptr_value(int_ptr,&(g->pending));
+	  g->pending=FALSE;
+	  push_ptr_value(goal_ptr,&(g->next));
+	  g->next=goal_stack;
+	  goal_stack=g;
+          Traceline("releasing %P\n",g->a);
+        }
+	/* Remove equality constraint from resid. list */
+        if (!lowered) { /* 28.1 instead of r->eqflag */
+	  push_ptr_value(resid_ptr,pr);
+	  *pr = r->next;
+	}
       }
-      r=r->next;
+      pr = &(r->next);
+      r = r->next;
     }
   }
 }
@@ -422,13 +477,23 @@ int trailflag;
 void release_resid(t)
 ptr_psi_term t;
 {
-  release_resid_main(t,TRUE);
+  release_resid_main(t,TRUE,TRUE);
+}
+
+/* 20.1 */
+/* Release only equality constraints if lowered==FALSE */
+/* Release all residuations if lowered==TRUE */
+void release_resid_eq(t,lowered)
+ptr_psi_term t;
+int lowered;
+{
+  release_resid_main(t,TRUE,lowered);
 }
 
 void release_resid_notrail(t)
 ptr_psi_term t;
 {
-  release_resid_main(t,FALSE);
+  release_resid_main(t,FALSE,TRUE);
 }
 
 

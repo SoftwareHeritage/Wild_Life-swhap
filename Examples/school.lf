@@ -1,6 +1,14 @@
 % Copyright 1992 Digital Equipment Corporation
 % All Rights Reserved
 
+% Small example illustrating inheritance.
+
+% Sample session:
+% > A=stu?
+% --1> B=emp?
+% ----2> A=B?
+
+
 person := {student ; employee}.
 employee := {staff ; faculty}.
 workstudy <| student.

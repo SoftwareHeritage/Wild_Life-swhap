@@ -7,10 +7,10 @@
 set argv1 = ` echo *.lf`
 
 foreach i ($argv1)
-	(echo 'load("' $i:r.lf '")?' | noblank ;echo "" ; \
+	(echo 'load("' $i:r.lf '")?' | tr -d ' ' ; echo "" ; \
 	cat $i:r.in  ; echo "halt?") | \
 	../wild_life | \
-	egrep -v '(Wild_Life|customizing|Copyright|Default|Garbage|Exiting|Peter)' > $i:r.out
+	egrep -v '(Wild_Life|X\ predicate|customizing|Copyright|Default|Garbage|Exiting|Peter)' > $i:r.out
 	diff $i:r.out $i:r.ref > $i:r.diff
 	echo -n `ls -l $i:r.diff`
 	echo ""

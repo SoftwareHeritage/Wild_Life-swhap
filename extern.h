@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <time.h>
 #include <assert.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -174,8 +175,17 @@
 
 /* The cut operation */
 /* This ensures that a cut is below choice_stack. */
+/*
 #define cut_to(C) if ((ptr_choice_point)(C)<=choice_stack) { \
-                    choice_stack=(ptr_choice_point)(C); \
+                       choice_stack=(ptr_choice_point)(C); \
+                  }
+*/
+
+/* 13.1 */
+/* New choice_stack value must be a valid choice point, i.e. not garbage */
+#define cut_to(C) { ptr_choice_point cp=choice_stack; \
+		    while ((GENERIC)cp>(GENERIC)(C)) cp=cp->next; \
+		    choice_stack=cp; \
                   }
 
 /* The basic dereference operation. */
@@ -281,7 +291,8 @@ typedef struct _definition {
 
 /* 22.9 */
 typedef struct _residuation {
-  int sortflag; /* bestsort == if TRUE ptr_definition else ptr_int_list */
+  char eqflag; /* 20.1 */
+  char sortflag; /* 20.1 */ /* bestsort == if TRUE ptr_definition else ptr_int_list */
   GENERIC bestsort; /* 21.9 */
   GENERIC value; /* to handle psi-terms with a value field 6.10 */
   ptr_goal goal;
@@ -297,7 +308,8 @@ typedef struct _psi_term {
   int status; /* Indicates whether the properties of the type have been */
               /* checked or the function evaluated */
   /* int curried; Distinguish between quoted and curried object 20.5 */
-  int flags; /* 14.9 */
+  /* 13.1 moved flags from here */
+  int flags; /* 14.9 */ /* 13.1 moved flags to here */
   GENERIC value;
   ptr_node attr_list;
   ptr_psi_term coref;
@@ -341,13 +353,14 @@ typedef int type_ptr;
 #define psi_term_ptr	0
 #define resid_ptr	1
 #define int_ptr		2
+#define char_ptr       10 /* 20.1 */
 #define def_ptr		3
 #define code_ptr	4
 #define goal_ptr	5
 #define cut_ptr         6 /* 22.9 */
 #define destroy_window	7+32 /* To backtrack on window creation */
-#define show_window	8+32 /* To backtrack on show window */
-#define hide_window	9+32 /* To backtrack on hide window */
+#define show_window     8+32 /* To backtrack on show window */
+#define hide_window     9+32 /* To backtrack on hide window */
 #define undo_action	  32 /* Fast checking for an undo action */
 
 typedef struct _stack {
@@ -410,8 +423,8 @@ extern float garbage_time;
 extern struct tms life_start,life_end;
 
 extern GENERIC other_base;
-extern GENERIC other_limit;
-extern GENERIC other_pointer;
+/* extern GENERIC other_limit; 21.12 */
+/* extern GENERIC other_pointer; 21.12 */
 
 extern ptr_node symbol_table;
 extern ptr_psi_term error_psi_term;
@@ -457,6 +470,8 @@ extern int file_date;
 
 /* The following variables are used to make built-in type comparisons */
 /* as fast as possible.  They are defined in built_ins.c.  */
+extern ptr_definition abortsym; /* 26.1 */
+extern ptr_definition aborthooksym; /* 26.1 */
 extern ptr_definition and;
 extern ptr_definition apply;
 extern ptr_definition boolean;
@@ -487,8 +502,9 @@ extern ptr_definition stream;
 extern ptr_definition succeed;
 extern ptr_definition such_that;
 extern ptr_definition top;
-extern ptr_definition true;
 extern ptr_definition timesym;
+extern ptr_definition tracesym; /* 26.1 */
+extern ptr_definition true;
 extern ptr_definition typesym;
 extern ptr_definition variable;
 extern ptr_definition opsym;
@@ -524,6 +540,8 @@ extern char *second_attr;
 extern char *weekday_attr;
 
 /************************* EXTERNAL FUNCTIONS *************************/
+
+extern void init_system(); /* in life.c */ /* 26.1 */
 
 extern int (* c_rule[])(); /* in built_ins.c */
 
@@ -572,7 +590,8 @@ extern ptr_psi_term stack_empty_list(); /* in lefun.c */
 #define VarArg		___va_lp___
 #define VarArgDecl	va_list VarArg
 /* Added last condition -- see Maurice Keulen */
-#if defined(_VARARGS_H) || defined(_VARARGS_) || defined(_sys_varargs_h)
+#if defined(_VARARGS_H) || defined(_VARARGS_) || \
+    defined(_sys_varargs_h) || defined(_H_VARARGS) /* 21.12 */
 # define VarArgInit(l)	va_start(VarArg)
 #else
 # define VarArgInit(l)	va_start(VarArg, l)

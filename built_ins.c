@@ -21,6 +21,8 @@
 
 int (* c_rule[MAX_BUILT_INS])();
 
+ptr_definition abortsym; /* 26.1 */
+ptr_definition aborthooksym; /* 26.1 */
 ptr_definition and;
 ptr_definition apply;
 ptr_definition boolean;
@@ -50,9 +52,10 @@ ptr_definition real;
 ptr_definition stream;
 ptr_definition succeed;
 ptr_definition such_that;
-ptr_definition top;
-ptr_definition true;
 ptr_definition timesym;
+ptr_definition top;
+ptr_definition tracesym; /* 26.1 */
+ptr_definition true;
 ptr_definition typesym;
 ptr_definition variable;
 ptr_definition opsym;
@@ -477,10 +480,11 @@ static int c_equal()
       if(success)
 	switch(num1+2*num2+4*num3) {
 	case 0:
-	  if(arg1==arg2)
-	    unify_bool_result(arg3,(REAL)1);
+	  if(arg1==arg2) {
+	    unify_bool_result(arg3,TRUE); /* 14.12 */
+	  }
 	  else
-	    residuate2(arg1,arg2);
+	    residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 1:
 	  residuate2(arg2,arg3);
@@ -495,7 +499,7 @@ static int c_equal()
 	  if(arg1==arg2 && !val3)
 	    success=FALSE;
 	  else
-	    residuate2(arg1,arg2);
+	    residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 5:
 	  if(!val3)
@@ -943,6 +947,59 @@ static int c_project()
 
 
 
+/******** C_EXIST_FEATURE
+  Here we evaluate "exist_feature(Label,Psi-term)". This
+  is a boolean function that returns true iff Psi-term
+  has the feature Label.
+*/
+static int c_exist_feature()
+{
+  int success=TRUE,v;
+  ptr_psi_term arg1,arg2,funct,result,ans;
+  ptr_node n;
+  char *label;
+  /* char *buffer="integer"; 18.5 */
+  char buffer[20]; /* Maximum number of digits in an integer */
+  
+  funct=aim->a;
+  deref_ptr(funct);
+  result=aim->b;
+  get_two_args(funct->attr_list,&arg1,&arg2);
+  if (arg1 && arg2) {
+    deref(arg1);
+    deref(arg2);
+    deref_args(funct,set_1_2);
+    label=NULL;
+    if (overlap_type(arg1->type,quoted_string)) /* 10.8 */
+      label=(char *)arg1->value;
+    else
+      if (overlap_type(arg1->type,integer) && arg1->value) { /* 10.8 */
+	v= *(REAL *)arg1->value;
+	/* sprintf(buffer,"%d%c",v,0); */
+	sprintf(buffer,"%d",v);
+	label=heap_copy_string(buffer); /* A little voracious */
+      }
+      else
+	label=arg1->type->symbol;
+
+    if (label) {
+      n=find(featcmp,label,arg2->attr_list);
+      ans=stack_psi_term(4);
+      ans->type=(n!=NULL)?true:false;
+      push_goal(unify,result,ans,NULL);
+    }
+    else
+      residuate(arg1);
+  }
+  else
+    curry();
+  
+  return success;
+}
+
+
+
+
 /******** C_DIFF
   Arithmetic not-equal.
 */
@@ -975,10 +1032,11 @@ static int c_diff()
       if(success)
 	switch(num1+2*num2+4*num3) {
 	case 0:
-	  if(arg1==arg2)
-	    unify_bool_result(arg3,(REAL)0);
+	  if(arg1==arg2) {
+	    unify_bool_result(arg3,FALSE); /* 14.12 */
+          }
 	  else
-	    residuate2(arg1,arg2);
+	    residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 1:
 	  residuate2(arg2,arg3);
@@ -993,7 +1051,7 @@ static int c_diff()
 	  if(arg1==arg2 && val3)
 	    success=FALSE;
 	  else
-	    residuate2(arg1,arg2);
+	    residuate2_double(arg1,arg2); /* 20.1 */
 	  break;
 	case 5:
 	  if(val3)
@@ -1102,73 +1160,6 @@ static int c_nonvar()
     return c_abort();
   }
 }
-
-
-/******** C_IS_FUNCTION
-  Succeed iff argument is a function (built-in or user-defined).
-*/
-static int c_is_function()
-{
-  ptr_psi_term arg1,arg2,t;
-  
-  t=aim->a;
-  deref_ptr(t);
-  get_two_args(t->attr_list,&arg1,&arg2);
-  if (arg1) {
-    deref_ptr(arg1); /* 18.6 */
-    deref_args(t,set_1);
-    return (arg1->type->type==function);
-  }
-  else {
-    Errorline("argument missing in %P.\n",t);
-    return c_abort();
-  }
-}
-
-
-/******** C_IS_PREDICATE
-  Succeed iff argument is a predicate (built-in or user-defined).
-*/
-static int c_is_predicate()
-{
-  ptr_psi_term arg1,arg2,t;
-  
-  t=aim->a;
-  deref_ptr(t);
-  get_two_args(t->attr_list,&arg1,&arg2);
-  if (arg1) {
-    deref(arg1);
-    deref_args(t,set_1);
-    return (arg1->type->type==predicate);
-  }
-  else {
-    Errorline("argument missing in %P.\n",t);
-    return c_abort();
-  }
-}
-
-
-/******** C_IS_SORT
-  Succeed iff argument is a sort (built-in or user-defined).
-*/
-static int c_is_sort()
-{
-  ptr_psi_term arg1,arg2,t;
-  
-  t=aim->a;
-  deref_ptr(t);
-  get_two_args(t->attr_list,&arg1,&arg2);
-  if (arg1) {
-    deref(arg1);
-    deref_args(t,set_1);
-    return (arg1->type->type==type);
-  }
-  else {
-    Errorline("argument missing in %P.\n",t);
-    return c_abort();
-  }
-}
-
 
 
 /* Return TRUE iff t has only argument "1", and return the argument. */
@@ -1523,7 +1514,7 @@ static int c_print_variables()
 {
   int success=TRUE;
 
-  print_variables();
+  print_variables(TRUE); /* 21.1 */
 
   return success;
 }
@@ -1712,13 +1703,15 @@ int nl_flag;
 {
   open_input_file("stdin");
   times(&life_end);
-  if (nl_flag) printf("\n");
-  printf("*** Exiting Wild_Life  ");
-  printf("[%1.3fs cpu, %1.3fs gc (%2.1f%%)]\n",
-         (life_end.tms_utime-life_start.tms_utime)/60.0,
-         garbage_time,
-         garbage_time*100 / ((life_end.tms_utime-life_start.tms_utime)/60.0)
-        );
+  if (NOTQUIET) { /* 21.1 */
+    if (nl_flag) printf("\n");
+    printf("*** Exiting Wild_Life  ");
+    printf("[%1.3fs cpu, %1.3fs gc (%2.1f%%)]\n",
+           (life_end.tms_utime-life_start.tms_utime)/60.0,
+           garbage_time,
+           garbage_time*100 / ((life_end.tms_utime-life_start.tms_utime)/60.0)
+          );
+  }
   exit(1);
 }
 
@@ -1733,13 +1726,34 @@ int c_abort()
 }
 
 
+/* 26.1 */
 int abort_life(nlflag)
 int nlflag;
 {
-  main_loop_ok = FALSE;
-  undo(NULL); /* 8.10 */
-  printf("\n*** Abort");
-  if (nlflag) printf("\n");
+  if ( aborthooksym->type!=function ||
+       !aborthooksym->rule->b ||
+       aborthooksym->rule->b->type==abortsym) {
+    /* Do a true abort if aborthook is not a function or is equal to 'abort'. */
+    main_loop_ok = FALSE;
+    undo(NULL); /* 8.10 */
+    if (NOTQUIET) fprintf(stderr,"\n*** Abort"); /* 21.1 */
+    if (NOTQUIET && nlflag) fprintf(stderr,"\n"); /* 21.1 */
+  } else {
+    /* Do a 'user-defined abort': initialize the system, then */
+    /* prove the user-defined abort routine (which is set by  */
+    /* means of 'setq(aborthook,user_defined_abort)'.         */
+    ptr_psi_term aborthook;
+
+    undo(NULL);
+    init_system();
+    var_occurred=FALSE;
+    stdin_cleareof();
+    if (NOTQUIET) fprintf(stderr,"\n*** Abort"); /* 21.1 */
+    if (NOTQUIET && nlflag) fprintf(stderr,"\n"); /* 21.1 */
+    aborthook=stack_psi_term(0);
+    aborthook->type=aborthooksym;
+    push_goal(prove,aborthook,DEFRULES,NULL);
+  }
   return TRUE;
 }
 
@@ -1777,8 +1791,8 @@ static int c_declaration()
 
 /******** C_SETQ
   Create a function with one rule F -> X, where F and X are
-  the arguments of setq.  Setq quotes the second argument and
-  is strict in (i.e. evaluates) the first argument.  Setq throws
+  the arguments of setq.  Setq quotes the first argument and
+  is strict in (i.e. evaluates) the second argument.  Setq throws
   away any previous definition of F.
   F must be undefined or a function, there is an error if F is
   a sort or a predicate.
@@ -2049,7 +2063,8 @@ static int c_open_out()
     if (psi_to_string(arg1,&fn))
       if (arg2) {
 	deref(arg2);
-        deref(g);
+        /* deref(g); 14.1 */
+	deref_args(g,set_1_2); /* 14.1 */
 	if (overlap_type(arg2->type,stream)) /* 10.8 */
 	  if (open_output_file(fn)) {
             arg3=stack_psi_term(4);
@@ -2201,7 +2216,7 @@ static int c_get()
 {
   int success=TRUE;
   ptr_psi_term arg1,arg2,g,t;
-  char c;
+  int c; /* 21.12 (prev. char) */
   
   g=aim->a;
   deref_ptr(g);
@@ -2949,8 +2964,9 @@ static int c_quote()
 static int c_prove()
 {
   int success=TRUE;
-  ptr_psi_term arg1,arg2,funct,result,other;
+  ptr_psi_term arg1,arg2,funct,result/* 13.1 ,other */;
   ptr_choice_point cutpt; 
+  ptr_psi_term trueterm,falseterm; /* 13.1 */
 
   funct=aim->a;
   deref_ptr(funct);
@@ -2971,17 +2987,17 @@ static int c_prove()
         cutpt=choice_stack;
 
         /* Result is FALSE */
-        other=stack_psi_term(0);
-        other->type=false;
-
-        push_choice_point(unify,result,other,NULL);
+        falseterm=stack_psi_term(0);
+        falseterm->type=false;
 
         /* Result is TRUE */
-        other=stack_psi_term(0);
-        other->type=true;
+        trueterm=stack_psi_term(0);
+        trueterm->type=true;
 
-        push_goal(unify,result,other,NULL);
-        push_goal(eval_cut,other,cutpt,NULL); /* 13.6 */
+        push_choice_point(unify,result,falseterm,NULL);
+
+        push_goal(unify,result,trueterm,NULL);
+        push_goal(eval_cut,trueterm,cutpt,NULL); /* 13.6 */
         push_goal(prove,arg1,DEFRULES,NULL);
       }
   }
@@ -3017,6 +3033,8 @@ static int c_bk_assign()
         /* If no trail, then can safely overwrite the psi-term */
         release_resid_notrail(arg1);
         *arg1 = *arg2;
+        push_psi_ptr_value(arg2,&(arg2->coref)); /* 14.12 */
+        arg2->coref=arg1; /* 14.12 */
       }
       else {
         push_psi_ptr_value(arg1,&(arg1->coref));
@@ -3146,6 +3164,37 @@ static int c_copy_term()
     clear_copy();
     copy_arg1=exact_copy(arg1,STACK);
     push_goal(unify,copy_arg1,result,NULL);
+  }
+  else
+    curry();
+
+  return success;
+}
+
+
+
+
+/******** C_COPY_POINTER
+  Make a fresh copy of the input's sort, keeping exactly the same 
+  arguments as before (i.e., copying the sort but not the features).
+*/
+static int c_copy_pointer()
+{
+  int success=TRUE;
+  ptr_psi_term funct,arg1,result,other;
+
+  funct=aim->a;
+  deref_ptr(funct);
+  get_one_arg(funct->attr_list,&arg1);
+  if (arg1) {
+    deref(arg1);
+    deref_args(funct,set_1);
+    other=stack_psi_term(4);
+    other->type=arg1->type;
+    other->value=arg1->value;
+    other->attr_list=arg1->attr_list;
+    result=aim->b;
+    push_goal(unify,other,result,NULL);
   }
   else
     curry();
@@ -4497,6 +4546,8 @@ void init_built_in_types()
   ptr_definition t;
   symbol_table=NULL;
   
+  abortsym=update_symbol("abort"); /* 26.1 */
+  aborthooksym=update_symbol("aborthook"); /* 26.1 */
   and=update_symbol(",");
   apply=update_symbol("*apply*");
   boolean=update_symbol("bool");
@@ -4526,9 +4577,10 @@ void init_built_in_types()
   stream=update_symbol("stream");
   succeed=update_symbol("succeed");
   such_that=update_symbol("|");
-  top=update_symbol("@");
-  true=update_symbol("true");
   timesym=update_symbol("time");
+  top=update_symbol("@");
+  tracesym=update_symbol("trace"); /* 26.1 */
+  true=update_symbol("true");
   typesym=update_symbol("::");
   variable=update_symbol("*variable*");
   opsym=update_symbol("op");
@@ -4623,9 +4675,6 @@ void init_built_in_types()
   /* Type checks */
   new_built_in("nonvar",predicate,c_nonvar);
   new_built_in("var",predicate,c_var);
-  new_built_in("is_function",predicate,c_is_function);
-  new_built_in("is_predicate",predicate,c_is_predicate);
-  new_built_in("is_sort",predicate,c_is_sort);
   
   /* Arithmetic */
   insert_math_builtins();
@@ -4644,6 +4693,7 @@ void init_built_in_types()
   /* Psi-term navigation */
   new_built_in("features",function,c_features);
   new_built_in("project",function,c_project);
+  new_built_in("exist_feature",function,c_exist_feature);
   new_built_in("rootsort",function,c_rootsort);
   new_built_in("strip",function,c_strip);
 
@@ -4654,6 +4704,7 @@ void init_built_in_types()
   new_built_in(":",function,c_unify_func); /* new 19.8 */
   new_built_in("&",function,c_unify_func);
   new_built_in("copy_term",function,c_copy_term);
+  new_built_in("copy_pointer",function,c_copy_pointer); /* 11.12 */
   /* UNI new_built_in(":",function,c_unify_func); */
 
   /* Type hierarchy navigation */

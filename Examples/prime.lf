@@ -10,7 +10,7 @@
 %      modified on Mon Jun 10 14:48:43 1991 by Hassan
 
 % A prime number is a positive integer whose number of proper factors is
-% exactly one. This can be expressed in LIFE as:
+% exactly one.
 
 prime :=  P:posint | number_of_factors(P) = one.
  

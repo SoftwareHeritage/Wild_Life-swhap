@@ -26,32 +26,37 @@ _A:load :-
 
 '*load_2*'([],@,@) :-
         !.
-'*load_2*'([_A|_B:@],_C,_D) :-
-        (exists(_E:strcon('*load_path*',strcon(_F:'*str*'(project(_A,_D)),'*life_ext*'))),
+'*load_2*'([_A|_B:@],
+           _C,
+           _D) :-
+        (exists(_E:strcon('*load_path*',
+                          strcon(_F:'*str*'(project(_A,_D)),'*life_ext*'))),
         !,
         ('*loaded_file*'(_E),
         !,
-        write("*** File """,_E,""" was already loaded"),
-        nl ; simple_load(_E),
+        '*quiet_write_nl*'("*** File """,
+                           _E,
+                           """ was already loaded") ; simple_load(_E),
         assert('*loaded_file*'(_E)),
-        '*load_3*'(_C,_E,_F)) ; write("*** File """,project(_A,_D),""" not found"),
-        nl),
+        '*load_3*'(_C,_E,_F)) ; '*quiet_write_nl*'("*** File """,project(_A,_D),""" not found")),
         !,
         '*load_2*'(_B,_C,_D).
 
 '*load_3*'(_A,_B,_C) :-
         _A or _B $\== _C,
         !,
-        write("*** File """,_B,""" loaded"),
-        nl.
+        '*quiet_write_nl*'("*** File """,_B,""" loaded").
 '*load_3*' :-
         succeed.
 
 '*load_path*' -> {"";
-                  strcon((load_path | is_function(load_path)),{"";"/"});
+                  strcon((load_path | is_function(` load_path)),{"";"/"});
                   "/_/vanroy/_/Life/Examples/"}.
 
-'*life_ext*' -> {(load_suffixes | is_function(load_suffixes));".lf";".life";""}.
+'*life_ext*' -> {(load_suffixes | is_function(` load_suffixes));
+                 ".lf";
+                 ".life";
+                 ""}.
 
 non_strict(listing)?
 _A:listing :-

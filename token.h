@@ -5,6 +5,7 @@
 extern void psi_term_error();
 
 extern int stdin_terminal;
+extern ptr_psi_term old_state; /* 14.1 */
 extern void stdin_cleareof();
 extern void begin_terminal_io();
 extern void end_terminal_io();
@@ -24,7 +25,7 @@ extern void put_back_token();
 /* Part of global input file state */
 extern ptr_psi_term saved_psi_term;
 extern ptr_psi_term old_saved_psi_term;
-extern char saved_char;
+extern int saved_char; /* 11.2 */
 extern int eof_flag;
 
 /* File state ADT */

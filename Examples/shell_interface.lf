@@ -1,0 +1,127 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%               INTERFACE BETWEEN THE SHELL AND THE PARSER                    %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+% Author: Bruno Dumant                                                        %
+%                                                                             %
+% copyright 1992 Digital Equipment Corporation                                %
+% All rights reserved                                                         %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% parsing
+%
+
+first_shell_parse( Chars, Vars, Expr, Type, ExistVars, End) :-
+	init_shell_parse,
+	setq('*rest_chars*',Chars),
+	read_new_shell_expr( next_shell_token, Bool, Expr, T, LeftToken, 
+	                     vars => Vars ),
+        cond( Bool,
+	      cond(  T :== assertion,
+		     Type = declaration,
+		     Type = query ),
+	      Type = error),
+        ExistVars = cond (features(Vars) :== [], false),
+	End = (LeftToken :== []).
+
+next_shell_parse( Vars, Expr, Type, End) :-
+	NT = next_shell_token,
+	read_new_expr( NT, Bool, Expr, T, LeftToken, 
+	               vars => Vars),
+        cond( Bool,
+              cond(  T :== assertion,
+	             Type = declaration,
+		     Type = query ),
+	      Type = error ),
+        End = (LeftToken :== []).
+
+read_new_shell_expr( R1, Bool, Expr, T, LeftToken,
+	             vars => Vars) :- 
+	(
+	    expr( Expr, vars => Vars,
+	          0 => R1, rest => R2, max => 1200),
+	    (
+		Expr :< string, T = query, 
+		NE = rootsort(Expr), Expr <- `( @ = system(NE))
+	    ;
+		parser_C(["."],false,R2,LeftToken), T = assertion
+	    ;
+	        parser_C(["?"],false,R2,LeftToken), T = query 
+	    ),
+	    Bool = true,
+	    !
+	;
+	    Bool = false
+	).
+
+init_shell_parse :- 
+	%% setq('*current_token*',"the beginning of the line"),
+	setq('*rest_token*',"the beginning of the line").
+
+%
+% tokenizing
+%
+
+next_shell_token ->
+ 	L
+    |           
+        (
+	    prove(read_new_shell_token(Tok, '*rest_chars*')) = TT,
+	    ( 
+		TT :== false, !, fail
+	    ;
+		Tok :== none, !,
+		setq('*rest_token*',"the end of the line"),
+		L = []
+	    ;
+		setq('*rest_token*',``Tok),
+		fail 
+	    )
+	;
+	    L = ['*rest_token*'|`next_shell_token]
+	).
+
+read_new_shell_token( Tok, X) :- 
+	void_chars(0 => X, rest => R1),!,
+	(
+	    R1 = [], !, Tok = none
+	;
+	    token( 0 => R1, Tok, rest => R2),
+	    setq('*rest_chars*', R2)
+	).
+
+
+%
+% printing variables
+%
+
+
+print_variables (@(vars => X)) :- 
+	cond( F:features(X) :\== [],
+	      (
+		  build_write_term(F,X) = WT,
+		  pretty_write(WT),nl
+	      )).
+
+build_write_term([A],X) -> `( A = Val ) | Val = project(A,X).
+build_write_term([A|B],X) -> 
+	`( A = Val ),build_write_term(B,X) | Val =  project(A,X).
+
+
+write_parse_error :-
+	'*nl_err*', '*write_err*'(
+		"**** Syntax error at line ",current_line_number," near: "),
+	cond( R:'*rest_token*' :=< string,
+	      write(R),
+	      cond( R :=< variable,
+	            '*write_err*'(project(1,R)),
+		    '*writeq_err*'(project(1,R)))),
+        '*nl_err*'.
+

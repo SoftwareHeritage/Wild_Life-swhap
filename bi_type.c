@@ -220,7 +220,7 @@ ptr_psi_term arg1, arg2;
       }
     }
     else
-      ans=FALSE;
+      ans=(arg2->type==cut); /* 21.1 */
   }
   else {
     if (arg1->value && (arg1->type==real || arg1->type==integer)) {
@@ -399,6 +399,80 @@ static int c_isa_ncmp()
 
 
 
+/******** C_IS_FUNCTION
+  Succeed iff argument is a function (built-in or user-defined).
+*/
+static int c_is_function()
+{
+  int success=TRUE,ans;
+  ptr_psi_term arg1,funct,result;
+
+  funct=aim->a;
+  deref_ptr(funct);
+  result=aim->b;
+  get_one_arg(funct->attr_list,&arg1);
+  if (arg1) {
+    deref(arg1);
+    deref_args(funct,set_1);
+    ans=(arg1->type->type==function);
+    unify_bool_result(result,ans);
+  }
+  else curry();
+
+  return success;
+}
+
+
+
+/******** C_IS_PREDICATE
+  Succeed iff argument is a predicate (built-in or user-defined).
+*/
+static int c_is_predicate()
+{
+  int success=TRUE,ans;
+  ptr_psi_term arg1,funct,result;
+
+  funct=aim->a;
+  deref_ptr(funct);
+  result=aim->b;
+  get_one_arg(funct->attr_list,&arg1);
+  if (arg1) {
+    deref(arg1);
+    deref_args(funct,set_1);
+    ans=(arg1->type->type==predicate);
+    unify_bool_result(result,ans);
+  }
+  else curry();
+
+  return success;
+}
+
+
+/******** C_IS_SORT
+  Succeed iff argument is a sort (built-in or user-defined).
+*/
+static int c_is_sort()
+{
+  int success=TRUE,ans;
+  ptr_psi_term arg1,funct,result;
+
+  funct=aim->a;
+  deref_ptr(funct);
+  result=aim->b;
+  get_one_arg(funct->attr_list,&arg1);
+  if (arg1) {
+    deref(arg1);
+    deref_args(funct,set_1);
+    ans=(arg1->type->type==type);
+    unify_bool_result(result,ans);
+  }
+  else curry();
+
+  return success;
+}
+
+
+
 /******** C_IS_VALUE
   Return true iff argument has a value, i.e. if it is implemented in
   a quirky way in Wild_Life.  This is true for integers, reals,
@@ -407,12 +481,12 @@ static int c_isa_ncmp()
 static int c_is_value()
 {
   int success=TRUE,ans;
-  ptr_psi_term arg1,arg2,funct,result;
+  ptr_psi_term arg1,funct,result;
 
   funct=aim->a;
   deref_ptr(funct);
   result=aim->b;
-  get_two_args(funct->attr_list,&arg1,&arg2);
+  get_one_arg(funct->attr_list,&arg1);
   if (arg1) {
     deref(arg1);
     deref_args(funct,set_1);
@@ -619,9 +693,7 @@ c_lub()
 
 insert_type_builtins()
 {
-  new_built_in("children",function,c_children);
-  new_built_in("parents",function,c_parents);
-  new_built_in("least_sorts",function,c_smallest);
+  /* Sort comparisons */
   new_built_in(":=<",function,c_isa_le);
   new_built_in(":<",function,c_isa_lt);
   new_built_in(":>=",function,c_isa_ge);
@@ -634,8 +706,18 @@ insert_type_builtins()
   new_built_in(":\\>",function,c_isa_ngt);
   new_built_in(":\\==",function,c_isa_neq);
   new_built_in(":\\><",function,c_isa_ncmp);
+
+  /* Type checks */
+  new_built_in("is_function",function,c_is_function);
+  new_built_in("is_predicate",function,c_is_predicate);
+  new_built_in("is_sort",function,c_is_sort);
   new_built_in("is_value",function,c_is_value);
   new_built_in("is_number",function,c_is_number);
+
+  /* Sort hierarchy maneuvering */
+  new_built_in("children",function,c_children);
+  new_built_in("parents",function,c_parents);
+  new_built_in("least_sorts",function,c_smallest);
   new_built_in("subsort",predicate,c_isa_subsort);
   new_built_in("glb",function,c_glb);
   new_built_in("lub",function,c_lub);

@@ -190,39 +190,43 @@ static void compress()
 	     /* the memory's edge, which causes a segmentation fault on*/
 	     /* SPARC. */
     while (addr>=heap_pointer) {
+    skip_addr:
       len= *(addr+delta);
       if (len) {
         if (len!=LONELY) {
-          GENERIC ad;
 
           if (len & (ALIGN-1)) len=len-(len & (ALIGN-1))+ALIGN;
           assert((len & (ALIGN-1))==0);
           len /= sizeof (*addr);
           assert(len>0);
 
-          /* Increment new_addr for every LONELY field inside the block. */
-          /* This recovers the space lost by copying of LONELY fields. */
-          ad=addr+delta;
-          for (i=1; i<len; i++)
-             if (VALID_ADDRESS(*(ad+i)))
-               new_addr++;
-
-        } else {
+        } else { /* len==LONELY */
+          GENERIC a;
 
           if (len & (ALIGN-1)) len=len-(len & (ALIGN-1))+ALIGN;
           assert((len & (ALIGN-1))==0);
           len /= sizeof (*addr);
           assert(len==1);
 
+	  /* Check if the LONELY field is actually part of a block. */
+	  /* If so, skip to the beginning of the block. */
+          a=addr;
+	  do {
+	    a--;
+          } while (a>=heap_pointer &&
+		   (*(a+delta)==0 || *(a+delta)==LONELY));
+	  if (a>=heap_pointer && *(a+delta)/sizeof(*a)+a>addr) {
+	    addr=a;
+	    goto skip_addr;
+	  }
         }
 
+        /* Move a block or an isolated LONELY field. */
         addr += len;
         for (i=0; i<len; i++) {
 	  addr--;
 	  new_addr--;
 	  *new_addr = *addr;
-          /* Not true for LONELY pointers inside blocks: */
-          /* assert(i<len-1? *(addr+delta)<len : TRUE); */
           assert(VALID_ADDRESS(new_addr));
 	  *(addr+delta) = (int)new_addr + 1;
         }
@@ -827,6 +831,9 @@ ptr_stack *s;
       /* int_ptr's are used to trail time_stamps, so they can get large. */
       break;
       
+    case char_ptr: /* 20.1 */
+      break;
+
     case def_ptr:
       check_definition(&((*s)->b));
       break;
@@ -994,6 +1001,8 @@ static void check()
   check_gamma_rest();
 
   assert((pass==1?bounds_undo_stack():TRUE));
+  check_definition(&abortsym); /* 26.1 */
+  check_definition(&aborthooksym); /* 26.1 */
   check_definition(&and);
   check_definition(&apply);
   check_definition(&boolean);
@@ -1026,6 +1035,7 @@ static void check()
   check_definition(&top);
   check_definition(&true);
   check_definition(&timesym);
+  check_definition(&tracesym); /* 26.1 */
   check_definition(&typesym);
   check_definition(&variable);
   check_definition(&opsym);
@@ -1075,6 +1085,7 @@ static void check()
 
   check_psi_term(&input_state);
   check_psi_term(&stdin_state);
+  check_psi_term(&old_state); /* 14.1 */
   check_psi_term(&error_psi_term);
   check_psi_term(&saved_psi_term);
   check_psi_term(&old_saved_psi_term);
@@ -1088,7 +1099,7 @@ static void check()
 
   check_choice(&choice_stack);
   /* check_choice(&prompt_choice_stack); 12.7 */
-  
+
   check_symbol(&symbol_table);
 
   check_var(&var_tree);
@@ -1157,12 +1168,14 @@ void garbage()
   /* Time elapsed since last garbage collection */
   life_time=(garbage_start_time.tms_utime - last_garbage_time.tms_utime)/60.0;
 
-  fprintf(stderr,"*** Garbage Collect ");
-  if (verbose) {
-    fprintf(stderr,"\n*** Begin");
-    print_gc_info(FALSE);
+  if (verbose) { /* 21.1 */
+    fprintf(stderr,"*** Garbage Collect ");
+    if (verbose) {
+      fprintf(stderr,"\n*** Begin");
+      print_gc_info(FALSE);
+    }
+    fflush(stderr);
   }
-  fflush(stderr);
   
   /* reset the other base */
   for (addr = other_base; addr < other_limit; addr ++)
@@ -1198,10 +1211,12 @@ void garbage()
   gc_time=(garbage_end_time.tms_utime - garbage_start_time.tms_utime)/60.0;
   garbage_time+=gc_time;
 
-  if (verbose) fprintf(stderr,"*** End  ");
-  print_gc_info(TRUE);
-  stack_info(stderr);
-  fflush(stderr);
+  if (verbose) { /* 21.1 */
+    if (verbose) fprintf(stderr,"*** End  ");
+    print_gc_info(TRUE);
+    stack_info(stderr);
+    fflush(stderr);
+  }
 
   last_garbage_time=garbage_end_time;
 
@@ -1313,7 +1328,7 @@ int memory_check ()
   int success=TRUE;
   
   if (heap_pointer-stack_pointer < GC_THRESHOLD) {
-    fprintf(stderr,"\n");
+    if (verbose) fprintf(stderr,"\n"); /* 21.1 */
     garbage();
     /* Abort if didn't recover at least GC_THRESHOLD/10 of memory */
     if (heap_pointer-stack_pointer < GC_THRESHOLD+GC_THRESHOLD/10) {

@@ -1,0 +1,705 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             
+%                   EXPANDING ACCUMULATORS AND HIDDEN ARGUMENTS 
+%
+% This file contains a preprocessor to add automatically accumulators and
+% passed arguments to predicates; in particular, it may be used to write DCG
+% like rules, in which psi-terms replace the standard prolog terms.  
+% 
+% All the necessary files are automatically loaded if they are in the same
+% directory.  
+%
+% AUTHOR 
+%
+% Bruno Dumant
+%
+% Copyright 1992-1993 Digital Equipment Corporation
+% All Rights Reserved
+%                                                        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%% operators
+op( 1200, xfy, -->) ?
+non_strict(-->) ?
+
+op( 1200, xfy, :--) ?
+non_strict(:--) ?
+
+
+op(800,xfy,with) ?
+op(800,xfy,without) ?
+op(700,xfx,is)?
+
+%%% utilities:
+load(shell_utils) ?
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% main predicates
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+(Lhs --> Rhs) :- 
+	(
+	    R = compile_rule( Lhs, Rhs, gram => true), 
+	    assert(R), 
+	    fail 
+	; 
+	    succeed
+	).
+
+asserta(term_expansion((Lhs --> Rhs)) -> 
+	compile_rule( Lhs, Rhs, gram => true)) ?
+
+(Lhs :-- Rhs) :- 
+	(
+	    R = compile_rule( Lhs, Rhs, gram => false), 
+	    assert(R), 
+	    fail 
+	; 
+	    succeed
+	).
+
+asserta(term_expansion((Lhs :-- Rhs)) -> 
+	compile_rule( Lhs, Rhs, gram => false)) ?
+
+%%% compile_rule: translates the rules into clauses
+
+compile_rule( Lhs, Rhs, gram => Bool) -> 
+	(compile_head( Lhs, In, Out, Pass, HeadParams, gram => Bool) :- 
+	     compile_body( Rhs, true, _, 
+	                  HeadParams, In, Out, Pass, gram => Bool)).
+
+
+%%% compile_head: translation of head symbols
+
+compile_head( Lhs, In, Out, Pass, HeadParams, gram => Bool) ->
+	Lhs 
+    |
+        PredName = rootsort(Lhs),
+	cond( Bool,
+              HeadParams = [dcg|F:flatten(bagof(A,'*pred_info*'(PredName,A)))],
+	      HeadParams = F
+	    ),
+	bind_params(HeadParams, Lhs, In, Out, Pass).
+
+
+%%% compile_body is used to translate a sequence of symbols into a sequence of
+%%% literals. 
+
+non_strict(compile_body) ?
+
+compile_body( Symbols, FoldOk, NewFoldOk,
+              HeadParams, In, Out, Pass, gram => Bool) -> 
+	cond( Symbols :== ,,
+	      compile_conj( Symbols, FoldOk, NewFoldOk,
+	                    HeadParams, In, Out, Pass, gram => Bool),
+	cond( Symbols :=< list,
+	      compile_terms( Symbols, FoldOk, NewFoldOk,
+	                     HeadParams, In, Out),	
+	cond( Symbols :== !,
+	      compile_cut( FoldOk, NewFoldOk, In, Out, Pass), 
+	cond( Symbols :== #,
+	      compile_code( Symbols, FoldOk, NewFoldOk,
+	                    In, Out, Pass ), 
+	cond( Symbols :== ; ,
+	      compile_disj( Symbols, FoldOk, NewFoldOk,
+	                    HeadParams, In, Out, Pass, gram => Bool),
+	cond( Symbols :== with,
+	      compile_with( Symbols, FoldOk, NewFoldOk,
+	                      HeadParams, In, Out, Pass, 
+			      with, gram => Bool),
+	cond( Symbols :== without,
+	      compile_with( Symbols, FoldOk, NewFoldOk,
+	                      HeadParams, In, Out, Pass, 
+			      without, gram => Bool),
+	cond( Symbols :== `(+),
+	      compile_acc( Symbols, FoldOk, NewFoldOk, In, Out),
+	cond( Symbols :== is,
+	      compile_unif( Symbols, FoldOk, NewFoldOk, In, Out, Pass ),
+	cond( Symbols :== insert,
+	      compile_insert( Symbols, FoldOk, NewFoldOk, In, Out),
+	cond( Symbols :== @,
+	      compile_meta( Symbols, FoldOk, NewFoldOk,
+	                    HeadParams, In, Out, Pass, gram => Bool),
+	      compile_pred( Symbols, FoldOk, NewFoldOk,
+	                    HeadParams, In, Out, Pass, gram => Bool)
+			))))))))))).
+	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% translation of the symbols
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% conjunction
+
+  compile_conj( ( Symb, Autres), FoldOk, NewFoldOk,
+	          HeadParams, In, Out, Pass, gram => Bool) ->
+	compile_body( Symb, FoldOk, InterFoldOk, 
+	              HeadParams, In, Out1, Pass, gram => Bool) comma 
+        compile_body( Autres, InterFoldOk, NewFoldOk,
+	              HeadParams, Out1, Out, Pass, gram => Bool).
+
+%%% disjunction
+
+  compile_disj( ( List1 ; List2), FoldOk, NewFoldOk,
+	          HeadParams, In, Out, Pass, gram => Bool) -> 
+	X 
+    | 
+        cond( List1 :== ; ,
+	      ( Expand1 = succeed, In1 = In, FoldOk1 = FoldOk ),
+	      cond(   Bool,
+	              (
+			  Expand1 = link_other_accs(Fin:features(In),false,
+			                            dcg,In,In1),
+			  project(dcg,In) = project(dcg,In1),
+			  FoldOk1 = false(false)
+		      ),
+		      (
+			  Expand1 = link_accs(Fin,false,In,In1),
+			  FoldOk1 = FoldOk
+		      )
+		  )),
+        Z = ( Expand1 comma
+	      compile_body( List1, FoldOk1, InterFoldOk1, 
+                           HeadParams, In1, Out, Pass, gram => Bool)),
+	cond( List2 :== ; ,
+	      ( Expand2 = succeed, In2 = In, FoldOk2 = FoldOk ),
+	      cond(   Bool,
+	              (
+			  Expand2 = link_other_accs(Fin,false,dcg,In,In2),
+			  project(dcg,In) = project(dcg,In2),
+			  FoldOk2 = false(false)
+		      ),
+		      (
+			  Expand2 = link_accs(Fin,false,In,In2),
+			  FoldOk2 = FoldOk
+		      )
+		  )),
+	T = ( Expand2 comma 
+	      compile_body( List2, FoldOk2, InterFoldOk2, 
+                           HeadParams, In2, Out, Pass, gram => Bool)),
+	NewFoldOk = InterFoldOk1 and InterFoldOk2,
+	X = `( Z ; T ), 
+	! .
+                                   
+
+%%% accumulating in dcg
+
+  compile_terms( Terms, FoldOk, NewFoldOk, 
+	         HeadParams, In, Out) -> 
+	link_other_accs( features(In), true,
+	                 dcg, In, Out) 
+        comma C
+    |  
+        cond( sort_member(dcg,HeadParams),
+	      (
+		  C = 'C'(Terms, FoldOk, Xs, Ys),
+		  project(dcg,Out) = Ys,
+		  project(dcg,In) = Xs
+	      ),
+	      C = 'C'(Terms, Fok,_,_)
+	    ),
+	    NewFoldOk = true.
+
+
+%%% accumulating in other accumulators
+
+  non_strict(compile_acc) ?
+
+  compile_acc( A+B, FoldOk, NewFoldOk, In, Out) ->  
+	link_other_accs( Fin:features(In), true, B, In, Out) 
+        comma Acc_pred 
+    |
+	'*acc_info*'(B,A,InAcc,OutAcc,acc_pred => Acc_pred),
+	cond(  sort_member(B,Fin),
+	       (
+		   project(B,In) = InAcc,
+		   project(B,Out) = OutAcc
+	       )),
+	NewFoldOk = FoldOk.
+
+%%% unify with the current value of an accumulator or passed argument
+
+  compile_unif( A is B, FoldOk, NewFoldOk, In, Out, Pass) ->  
+	link_accs( Fin:features(In), true, In, Out) 
+        comma Expr
+    |
+        cond(   sort_member(B,Fin),
+	        cond( prove(var(A)),
+		      (
+			  A = project(B,In),
+			  Expr = succeed
+		      ),
+		      Expr = ( A = project(B,In))),
+		cond( sort_member(B,features(Pass)),
+		      cond( prove(var(A)),
+		            (
+				A = project(B,Pass),
+				Expr = succeed
+			    ),
+			    Expr = ( A = project(B,Pass))),
+		      fail)),
+	NewFoldOk = FoldOk.
+
+%%% insert in a chain
+
+  compile_insert( insert(X,Y,Acc), FoldOk, NewFoldOk, In, Out) ->  
+	T
+    |
+        cond(   sort_member(Acc,Fin:features(In)),
+	        Expr = (X = project(Acc,In), Y = project(Acc,Out)),
+		fail),
+	T = (link_other_accs( Fin, true, Acc, In, Out) comma Expr),
+	NewFoldOk = FoldOk.
+
+
+%%% overloading 
+
+  compile_with( @(NonTerm,B), FoldOk, NewFoldOk,
+	        HeadParams, In, Out, Pass, Prep, gram => Bool) ->  
+	NonTerm
+    |
+        PredName = rootsort(NonTerm),
+	OverParams = get_params(B,NonTerm,Prep),
+	cond( Bool,
+              (
+		  List = [dcg|F:flatten(bagof(A,'*pred_info*'(PredName,A)))],
+		  NewFoldOk = true
+	      ),
+	      (
+		  List = F,
+		  NewFoldOk = FoldOk
+	      )),
+	part_sort(HeadParams,List,CommonParams,OnlyHeadParams, NonHeadParams),
+	part_sort(OverParams,CommonParams,CommonOverParams,_,OnlyCommonParams),
+	bind_params(OnlyCommonParams,NonTerm, In, Out, Pass),
+	init_params(sorts_list_diff(NonHeadParams,OverParams), NonTerm),
+	link_accs(get_accs(OnlyHeadParams),true,In, Out),
+	link_accs(get_accs(CommonOverParams),true,In,Out).
+
+%%% cut
+
+  compile_cut( true, NewFoldOk, In, Out, Pass) -> 
+	! | NewFoldOk = false, In = Out.
+  compile_cut( Bool:false, NewFoldOk, In, Out, Pass) -> 
+	T 
+    | 
+        NewFoldOk = false, 
+	cond(   project(1,Bool) :== false,
+	        (
+		    link_other_accs(Fin:features(In),true,dcg,In,Out),
+		    T = ( project(dcg,In) = project(dcg,Out),! )
+	        ),
+	        ( In = Out, T = ! )
+	    ).
+
+%%% insertion of code
+
+  compile_code( Term: #, true, NewFoldOk, In, Out, Pass)  -> 
+	transLifeCode( Term) | In = Out, NewFoldOk = false.
+  compile_code( Term: #, Bool:false, NewFoldOk, In, Out, Pass)  -> 
+	T 
+    | 
+        NewFoldOk = false, 
+	cond(   project(1,Bool) :== false,
+	        (
+		    link_other_accs(Fin:features(In),true,dcg,In,Out),
+		    T = ( project(dcg,In) = project(dcg,Out),
+		          transLifeCode( Term))
+	        ),
+	        ( In = Out, T = transLifeCode( Term) )
+	    ).
+
+%%% non-terminals
+
+  compile_pred(NonTerm, FoldOk, NewFoldOk, 
+	       HeadParams, In, Out, Pass, gram => Bool) -> 
+	NewTerm  
+    |  
+        PredName = rootsort(NonTerm),
+	cond( Bool,
+              (
+		  List = [dcg|F:flatten(bagof(A,'*pred_info*'(PredName,A)))],
+		  NewFoldOk = true
+	      ),
+	      (
+		  List = F,
+		  NewFoldOk = FoldOk
+	      )),
+	part_sort(HeadParams,List,CommonParams,OnlyHeadParams,NonHeadParams),
+	bind_params(CommonParams, NonTerm, In, Out, Pass),
+	init_params(NonHeadParams, NonTerm),
+	OnlyHeadAccs = get_accs(OnlyHeadParams),
+        NewTerm = 
+          (link_accs(OnlyHeadAccs,true,In, Out) comma NonTerm). 	
+
+%%% meta_symbols
+
+compile_meta( Symbols, FoldOk, NewFoldOk, 
+	      HeadParams, In, Out, Pass, gram => Bool) ->  
+	`interpret_symbols(Symbols,
+		           HeadParams, In, Out, Pass,
+			   c_name => Name,
+			   gram => Bool) 
+    |
+         Name = 'C_function_name',
+	 Out = create_out(features(In)),
+	 NewFoldOk = true.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% interpreting symbols
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+
+interpret_symbols( X:list,
+	           _, In, Out, Pass,
+		   gram => Bool, c_name => C) -> 
+	cond( Bool, C(X, true, project(dcg,In), project(dcg,Out)))
+    |
+        link_other_accs(features(In),true,dcg,In,Out).
+
+interpret_symbols( A + B,
+	           _, In, Out, Pass,
+		   gram => Bool, c_name => C) -> 
+	cond( sort_member(B,Fin:features(In)),
+	      (
+		  '*acc_info*'(C,A,project(B,In),project(B,Out),
+		              acc_pred => Acc),
+		  Acc,
+		  link_other_accs(Fin,true,B,In,Out) 
+	      ),
+	      fail ).
+
+interpret_symbols( A is B,
+	           _, In, Out, Pass) -> 
+	cond( sort_member(B,Fin:features(In)),
+	      (
+		  A = project(B,In),
+		  link_accs(Fin,true,In,Out)
+	      ),
+	      cond( sort_member(B,features(Pass)),
+	            (
+			A = project(B,Pass),
+			link_accs(Fin,true,In,Out)
+		    ),
+		    fail)).
+
+interpret_symbols( insert(A,B,C),
+	           _, In, Out, Pass) -> 
+	cond( sort_member(C,Fin:features(In)),
+	      (
+		  A = project(C,In),
+		  B = project(C,Out),
+		  link_other_accs(Fin,true,C,In,Out)
+	      ),
+	      fail).
+
+interpret_symbols( X: !, @, In, Out) -> 
+	In = Out, X .
+
+interpret_symbols( X: #, @, In, Out) -> 
+	In = Out, transLifeCode(X).
+
+interpret_symbols( (A,B),
+	           HeadParams, In, Out, Pass,
+		   c_name => C, gram => Bool) -> 
+	Inter = create_out(features(In)),
+	interpret_symbols(A,HeadParams, In, Inter, Pass,
+	                  c_name => C, gram => Bool),
+        interpret_symbols(B,HeadParams, Inter, Out, Pass,
+	                  c_name => C, gram => Bool).
+
+interpret_symbols( (A;B),
+	           HeadParams, In, Out, Pass,
+		   c_name => C, gram => Bool) -> 
+	interpret_symbols(A,HeadParams, In, Out, Pass,
+	                  c_name => C, gram => Bool) ;
+        interpret_symbols(B,HeadParams, In, Out, Pass,
+	                  c_name => C, gram => Bool).
+
+interpret_symbols( NonTerm, 
+	           HeadParams, In, Out, Pass, gram => Bool) -> 
+	PredName = rootsort(NonTerm),
+	cond( Bool,
+              (
+		  List = [dcg|F:flatten(bagof(A,'*pred_info*'(PredName,A)))],
+		  NewFoldOk = true
+	      ),
+	      (
+		  List = F,
+		  NewFoldOk = FoldOk
+	      )),
+	part_sort(HeadParams,List,CommonParams,OnlyHeadParams,NonHeadParams),
+	bind_params(CommonParams, NonTerm, In, Out, Pass),
+	init_params(NonHeadParams, NonTerm),
+	OnlyHeadAccs = get_accs(OnlyHeadParams),
+        link_accs(OnlyHeadAccs,true,In, Out),
+	NonTerm. 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Dealing with parameters
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+
+%%% bind arguments of a term with In, Out or Pass
+
+bind_params([]) :- !.
+bind_params( [A|B], X, In, Out, Pass) :- 
+	bind_param( A, X, In, Out, Pass),
+	bind_params( B, X, In, Out, Pass).
+
+bind_param(A,X,In,Out,Pass) :-
+	(
+	    '*acc_info*'( A, in_name => InName, out_name => OutName),
+	    !,
+	    project( InName, X) = InVal,
+	    project( A, In) = InVal,
+	    project( OutName, X) = OutVal,
+	    project( A, Out) = OutVal
+	;
+	    project(A,X) = project(A,Pass)
+	).
+
+%%% link all accumulators of a list but one
+
+link_other_accs([],_,C,In,Out) -> 
+	succeed
+    |
+        cond( sort_member(C,features(In)),
+	      project(C,Out) = _).
+link_other_accs([A|B],true,C,In,Out) ->
+	succeed
+    |
+	cond( A :\== C,
+	      project(A, In) = project(A, Out)),
+	link_other_accs(B,true,C,In,Out).
+link_other_accs([A|B],false,C,In,Out) ->
+	cond( A :\== C,
+	      project(A, In) = project(A, Out),
+	      succeed) comma
+	link_other_accs(B,false,C,In,Out).
+
+
+%%% link accumulators
+
+link_accs([]) -> succeed.
+link_accs([A|B],true,In,Out) ->
+	succeed
+    |
+        project(A, In) = project(A, Out),
+       	link_accs(B,true,In,Out).
+link_accs([A|B],false,In,Out) ->
+	(project(A, In) = project(A, Out)) comma link_accs(B,false,In,Out)
+    |
+        project(A,Out) = _.
+
+
+%%% give parameters their initial value
+
+init_params([]) :- !.
+init_params([A|B],NonTerm) :-
+	'*acc_info*'(A,in_name => InName, out_name => OutName,
+	           in_start => In, out_start => Out),!, 
+	project(InName,NonTerm) = In,
+	project(OutName,NonTerm) = Out,
+	init_params(B,NonTerm).
+init_params([A|B],NonTerm) :-
+	(
+	    '*pass_info*'(A, start => Start),!
+	;
+	    '*nl_err*',
+	    '*write_err*'("**** Warning: no initial value for parameter ",A),
+	    '*nl_err*'
+	),
+	project(A,NonTerm) = Start,
+	init_params(B,NonTerm).
+
+%%% create out
+
+create_out([A|B]) -> C:create_out(B) | project(A,C) = @ .
+create_out([]) -> @.
+
+%%% get the accumulators in a list of parameters
+
+get_accs([A|B]) -> cond( prove('*acc_info*'(A)),
+	                 [A|get_accs(B)],
+			 get_accs(B)).
+get_accs([]) -> [].
+
+%%% get the parameters from an overload term, and bind correctly
+
+get_params(X,Term,Prep) ->
+	List
+    |
+	implies(get_params2(X,Prep,Term,[],List)).
+
+get_params2((A,B),Prep,Term,In,Out) :-
+	!,
+	implies(get_params2(A,Prep,Term,In,Inter)),
+	implies(get_params2(B,Prep,Term,Inter,Out)).
+
+get_params2( X with Y,Prep,Term,In,Out) :-
+	!,
+	implies(get_params2(X,Prep,Term,In,Inter)),
+	implies(get_params2(Y,with,Term,Inter,Out)).
+
+get_params2( X without Y,Prep,Term,In,Out) :-
+	!,
+	implies(get_params2(X,Prep,Term,In,Inter)),
+	implies(get_params2(Y,without,Term,Inter,Out)).
+
+
+get_params2(X,with,Term,In,Out) :-
+	!,
+	get_params3(X,Term,In,Out).
+
+get_params2(X,without,Term,In,Out) :-
+	cond( sort_member(X,In),
+	      Out = In,
+	      Out = [X|In]).
+	
+
+get_params3(in(X) = B,Term,In,Out) :-
+	!,
+	'*acc_info*'(X,in_name => IName),
+	project(IName,Term) = B,
+	cond( sort_member(X,In),
+	      Out = In,
+	      Out = [X|In]).
+
+get_params3( out(X) = B,Term,In,Out) :-
+	!,
+	'*acc_info*'(X,out_name => IName),
+	project(IName,Term) = B,
+	cond( sort_member(X,In),
+	      Out = In,
+	      Out = [X|In]).
+
+get_params3( X = B,Term,In,Out) :-
+	project(X,Term) = B,
+	cond( sort_member(X,In),
+	      Out = In,
+	      Out = [X|In]).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Declarations
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%% accumulator declaration
+
+non_strict(acc_info) ?
+acc_info(Acc,Term,In,Out,
+	 acc_pred => Acc_pred, 
+	 in_name => InName, out_name => OutName,
+	 in_start => InStart, out_start => OutStart) :-
+	AS = psi2str(Acc),
+	InName = {strcon("in_",AS);@},
+	OutName = {strcon("out_",AS);@},
+	!,
+	assert( '*acc_info*'(Acc,Term,In,Out,
+	                     acc_pred => Acc_pred, 
+			     in_name => InName, out_name => OutName,
+			     in_start => InStart, out_start => OutStart) ).
+
+
+asserta(
+   term_expansion(X:acc_info(Acc)) -> 
+	('*acc_info*'& strip(X) & @(in_name => InName, out_name => OutName)
+            :- !)
+    |
+        ( 
+	    AS = psi2str(Acc),
+	    InName = {strcon("in_",AS);@},
+	    OutName = {strcon("out_",AS);@},
+	    !
+	)) ?
+
+dynamic('*acc_info*') ?
+non_strict('*acc_info*') ?
+
+%%% dcg accumulator declaration
+
+acc_info( dcg, Term, Xs, Ys, acc_pred => 'C'(Term,false,Xs,Ys),
+	  in_name => 0, out_name => rest) ?
+
+%%% pred_info
+
+dynamic('*pred_info*') ?
+assert('*pred_info*'), retract('*pred_info*') ?
+
+X:pred_info :- 
+	T = '*pred_info*' & strip(X),
+	assert(T).
+
+asserta(term_expansion(X:pred_info) ->
+	'*pred_info*' & strip(X) )?
+
+%%% pass_info
+
+dynamic('*pass_info*') ?
+assert('*pass_info*'), retract('*pass_info*') ?
+
+X:pass_info(P,I,start=>I) :- 
+	assert('*pass_info*'(P,start => I)).
+
+asserta(term_expansion(X:pass_info) ->
+	'*pass_info*'(P,start => I)
+    |
+        X = @(P,I,start=>I)) ?
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% special treatments
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%% Inserting Life code
+
+transLifeCode( L) -> transList( feats(L)).
+
+transList( [A|B]) -> A comma transList(B).
+transList( []) ->  succeed.
+
+
+%%% handling terminals
+
+termSequence( [], Ys)     -> Ys.
+termSequence( [T|Ts], Ys) -> [T|termSequence( Ts, Ys)].
+
+default_C( Terms: list, true, Xs, Ys ) -> 
+	succeed | Xs = termSequence(Terms, Ys).
+default_C( Terms: list, false, Xs, Ys) -> 
+	Xs = termSequence(Terms, Ys).
+
+
+set_C(Function_name) :-
+	set_func_arg('C'(Terms,FoldOk,Xs,Ys),
+	                  Function_name(Terms,FoldOk,Xs,Ys)),
+	setq('C_function_name',`Function_name).
+
+reset_C :- 
+	set_func_arg('C'(Terms,FoldOk,Xs,Ys), 
+	                  default_C(Terms,FoldOk,Xs,Ys)),
+	setq('C_function_name',default_C).
+
+set_new_func_arg('C'(Terms,FoldOk,Xs,Ys), 
+	             default_C(Terms,FoldOk,Xs,Ys)),
+setq('C_function_name', default_C) ?

@@ -1218,11 +1218,14 @@ ptr_tab_brk tab;
   other variables.
   Returns TRUE iff the set of query variables is nonempty.
 */
-int print_variables()
+int print_variables(printflag)
+int printflag;
 {
   ptr_tab_brk new;
   GENERIC old_heap_pointer;
   
+  if (!printflag) return; /* 21.1 */
+
   outfile=output_stream;
   listing_flag=FALSE;
   old_heap_pointer=heap_pointer;

@@ -1,0 +1,4 @@
+A=cond({(true|gc);(false|gc)},(2 | gc),(3 | gc,!,gc))?
+;
+;
+

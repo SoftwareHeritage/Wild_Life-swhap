@@ -1,0 +1,18 @@
+
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+
+% Sample input for the PERT scheduler:
+% The three examples schedule.in[123] are permutations of the
+% same problem, to illustrate that calculations in Life do not
+% depend on order of execution.
+
+A3=activity(duration=>30),
+A7=activity(duration=>4 ,prerequisites=>[A5,A6]),
+A5=activity(duration=>8 ,prerequisites=>[A2,A3]),
+A1=activity(duration=>10),
+A4=activity(duration=>18,prerequisites=>[A1,A2]),
+A6=activity(duration=>3 ,prerequisites=>[A1,A4]),
+A2=activity(duration=>20),
+visAllActs([A3,A2,A4,A7,A6,A5,A1]) ?
+

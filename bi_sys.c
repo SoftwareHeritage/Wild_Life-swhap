@@ -16,6 +16,8 @@
 
 #define copyPsiTerm(a,b)        (ptr_psi_term )memcpy(a,b,sizeof(psi_term))
 
+
+
 /******** C_TRACE
   With no arguments: Toggle the trace flag & print a message saying whether
   tracing is on or off.
@@ -71,6 +73,8 @@ int c_trace()
   return success;
 }
 
+
+
 int c_tprove()
 {
   ptr_psi_term t,arg1,arg2;
@@ -80,6 +84,8 @@ int c_tprove()
   set_trace_to_prove();
   return TRUE;
 }
+
+
 
 /******** C_STEP
   Toggle the single step flag & print a message saying whether
@@ -151,6 +157,25 @@ static int c_maxint()
     else
       success=unify_real_result(result,(REAL)MAXINT);
   }
+  return success;
+}
+
+/* 21.1 */
+/******** C_QUIET
+  Return the value of not(NOTQUIET).
+*/
+static int c_quiet()
+{
+  ptr_psi_term t,result,ans;
+  int success=TRUE;
+  
+  t=aim->a;
+  deref_args(t,set_empty);
+  result=aim->b;
+  deref_ptr(result);
+  ans=stack_psi_term(4);
+  ans->type = !NOTQUIET ? true : false ;
+  push_goal(unify,result,ans,NULL);
   return success;
 }
 
@@ -597,6 +622,7 @@ void insert_system_builtins()
   new_built_in("step",predicate,c_step);
   new_built_in("verbose",predicate,c_verbose);
   new_built_in("warning",predicate,c_warning);
+  new_built_in("*quiet*",function,c_quiet); /* 21.1 */
   new_built_in("maxint",function,c_maxint);
   new_built_in("cputime",function,c_cputime);
   new_built_in("realtime",function,c_realtime);

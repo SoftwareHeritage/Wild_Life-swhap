@@ -1,0 +1,15 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                   TERM EXPANSION
+%
+% Author: Bruno Dumant
+%
+% Copyright 1992 Digital Equipment Corporation
+% All rights reserved
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+dynamic(term_expansion) ?
+
+term_expansion(A) -> A.

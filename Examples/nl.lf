@@ -6,11 +6,11 @@
 % ON MACHINE. . Prlp22
 % STARTED ON. . Thu Mar 28 14:33:16 1991
 
+% Last modified on Wed Feb 26 18:59:18 1992 by Hassan
+
 % This parses simple English sentences.
 % Try the query 'nl_parse([john,runs],S)?'
 % The grammar given here is very small and limited.
-
-%  Last modified on Wed Feb 26 18:59:18 1992 by Hassan
 
 % The Type Hierarchy:
 

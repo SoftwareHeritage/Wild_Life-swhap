@@ -1,0 +1,462 @@
+
+
+                   EXPANDING ACCUMULATORS AND HIDDEN ARGUMENTS 
+
+
+
+INTRODUCTION
+
+  acc_expander.lf contains a preprocessor to add automatically accumulators
+  and passed arguments to predicates; in particular, it may be used to write
+  Definite Clause Grammar rules, in which psi-terms replace the standard prolog
+  terms. The technique is based on an idea described in Peter van Roy's thesis.
+  
+  The accumulators technique is described in Sterling and Shapiro's Art of
+  Prolog. DCGs are a major example of programs using a single accumulator,
+  which is in this case a difference list. 
+
+  Implementing an accumulator essentially consists in adding two arguments to
+  each predicate and by chaining these arguments inside the clauses. 
+
+  Ex:
+  foo(in => A1,out => A3) :-
+	bar(in => A1,out => A2), fuz(in => A2,out => A3).
+
+  Passed arguments are useful to pass some global information to
+  procedures.
+
+  Ex:
+  foo(pass => X) :-
+	bar(pass => X), fuz(pass => X).
+
+  Passed arguments and accumulators may also be useful to implement some 
+  kinds of attributes in attribute grammars. Unfortunately, they make the code
+  harder to write and to read. We describe here a preprocessor that adds the
+  necessary arguments to the predicates and some built-in operations on these
+  arguments.
+
+
+USAGE
+
+  If you use this file in a context where no automatic term expansion takes
+  place (namely if you don't use the life shell, or if you don't load your
+  files with the Life loader), all the declarations and assertions must end
+  with a question mark; Otherwise, they may also end with a dot. 
+
+  Syntax:
+
+  Lhs :-- Rhs ?
+  Lhs --> Rhs ?
+
+     Lhs is like any clause head; Rhs is like any predicate definition body
+     except that some special symbols may appear in predicate places.
+
+     The predicates occurring in the rule are expanded according to the
+     pred_info declarations attached to them, that tell the preprocessor which
+     arguments have to be added. They may have any number of arguments.
+     Beware: some feature names are used by accumulators or passed arguments. 
+
+     Ex:(adapted from van Roy)
+
+       acc_info(castor)?
+       pred_info(p,[castor,pollux])?
+       pred_info(q,[castor])?
+       pred_info(r,[pollux])?
+
+       p :-- p, q, r, s ?
+
+     The obtained clause is:
+
+     p(in_castor => A,out_castor => B,pollux => C) :-
+        p(in_castor => A,out_castor => D,pollux => C),
+        q(in_castor => D,out_castor => B),
+        r(pollux => C),
+        s.
+
+     An accumulator named dcg is predefined. If --> is used, all predicates are
+     given two extra features (0 and rest) that implement this accumulator.
+
+     Ex: (with the previous declarations)
+
+       p --> p, q, r, s ?
+
+     The obtained clause is:
+
+     p(0 => A,in_castor => B,out_castor => C,pollux => D,rest => E) :-
+        p(0 => A,in_castor => B,out_castor => F,pollux => D,rest => G),
+        q(0 => G,in_castor => F,out_castor => C,rest => H),
+        r(0 => H,pollux => D,rest => I),
+        s(0 => I,rest => E).
+
+
+  Special predicates:
+
+
+     1) X is Acc: unifies X with the current value of the accumulator (or
+                  passed argument) Acc.
+
+        ex:  (with the previous declarations)
+
+          p :-- p, X is castor, write(X), Y is pollux, write(Y), p ?
+
+        The obtained clause is 
+        p(in_castor => A,out_castor => B,pollux => C) :-
+           p(in_castor => A,out_castor => D,pollux => C),
+           write(D),
+           write(C),
+           p(in_castor => D,out_castor => B,pollux => C).
+
+     2) insert(X,Y,Acc): inserts X and Y in the chain implementing Acc.
+
+        ex:  (with the previous declarations)
+
+          p :-- p, insert(a,b,castor), p ?
+
+        The obtained clause is:
+
+	p(in_castor => A,out_castor => B,pollux => C) :-
+           p(in_castor => A,out_castor => D,pollux => C),
+           a = D,
+           b = E,
+           p(in_castor => E,out_castor => B,pollux => C).
+
+     3) X + Acc: accumulate X in accumulator Acc.
+
+        When an accumulator is declared, it is generally associated with an
+        accumulation predicate that may take 3 arguments:
+        - the two terms implementing the accumulator;
+        - the data to be accumulated.
+
+        ex:
+          
+          acc_info(fwd,X,In,Out,acc_pred => (Out = [X|In])) ?
+          pred_info(foo,[fwd]) ?
+
+          foo :-- 4+fwd, foo ?
+  
+        is translated into
+  
+          foo(in_fwd => A,out_fwd => B) :-
+             C = [4|A],
+             foo(in_fwd => C,out_fwd => B).
+
+        The usual dcg accumulator could be defined by the following
+        declaration: 
+
+          acc_info(dcg,L,In,Out,acc_pred => (In = append(L,Out))) ?
+
+     4) List : accumulate the list List in the accumulator dcg
+
+        This is syntactic sugar for List+dcg, and is compatible with the usual
+        DCG notations.
+
+     5) Use of cut: cuts may be used anywhere, and are never expanded.
+        
+        ! is in fact syntactic sugar for #(!) (see below).
+
+     6) # : the preprocessor may be told not to expand a piece of code by
+            inserting it between #( and ). 
+
+        ex: (with the previous declarations)
+
+          p --> q , #(p) ?
+
+        The obtained clause is:
+
+        p(0 => A,in_castor => B,out_castor => C,pollux => @,rest => D) :-
+           q(0 => A,in_castor => B,out_castor => C,rest => D),
+           p.
+
+        There are two ways of translating a rule like:
+            foo --> #(pred) ?
+
+        Either:
+           foo(rest => A,0 => B) :-
+	      pred,
+	      A = B.
+        or:
+           foo(rest => A,0 => A) :-
+	      pred.
+
+        In most cases, those two translations will have exactly the same
+        behaviour, but if some side-effect is expected from pred, they may
+        differ. It is the case if pred is a cut for instance. 
+        The translation used here is the second one, namely 
+               foo -->  #(pred) ?
+        is equivalent to  
+               foo --> [], #(pred) ? 
+        
+        The other alternative may be obtained by writing : 
+	       foo -->  #(pred), []  ?
+
+
+     7) Meta Programming
+
+        Variables may be used as symbols in the body of the rules:
+
+        ex:  (with the declarations above)
+
+          p(X) --> X ?
+
+        is translated into
+
+          p(0 => A,rest => F
+            B,
+  	    in_castor => C, out_castor => D, pollux => E ) :-
+               interpret_symbols(B,
+                                 [dcg,castor,pollux],
+                                 @(castor => C,dcg => A),
+                                 @(castor => D,dcg => F),
+                                 @(pollux => E),
+                                 c_name => default_C,
+                                 gram => true).
+
+        interpret_symbols has all the necessary information to interpret X when
+        it gets bound; interpret_symbols will residuate until X is no longer @.
+        
+        This way, if X is instantiated to some symbol foo, the first rule will
+        behave exactly like:
+                  a --> foo ?
+        If X is instantiated to [1,2,3], it will behave like:
+                  a --> [1,2,3] ?
+        and so on.
+   
+        The c_name feature is the name of the 'C' function used when the
+        grammar is being translated to Life.
+
+  Declarations:
+
+    - pred_info(Pred,List) ?
+
+      This tells the preprocessor to add arguments to every occurrence of Pred,
+      and to chain them correctly. These arguments correspond to the elements
+      of List.  
+      The accumulators in list must have been declared as such by an acc_info
+      declaration. Otherwise, they are considered as passed arguments. 
+      If an accumulator is named toto, two arguments are added, named in_toto
+      and out_toto. Other names may be chosen by the user (see acc_info). If a
+      passed argument is named toto, the corresponding argument in every
+      occurrence of a predicate using it is also named toto.
+      There may be several pred_info declarations for the same predicate.
+
+    - acc_info( AccName, X, In,  Out, acc_pred => Acc_Pred,
+                in_start => IS, out_start => OS,
+	        in_name => IName, out_name => OName) ?
+
+      where:
+      - AccName is the name of the accumulator (an atom or a string)
+      - X, In, Out, Acc_Pred:
+        Acc_Pred is a predicate or a sequence of predicates taking X, In ,Out
+        as arguments. 
+        In a rule, 
+             Y+AccName 
+        is translated into Acc_Pred with Y bound to X, In and Out being the
+        current link of the accumulator.  
+
+THE DCG ACCUMULATOR:
+
+  The dcg accumulator is defined in the following way:
+    
+    acc_info( dcg, Term, Xs, Ys, acc_pred => 'C'(Term,false,Xs,Ys),
+	      in_name => 0, out_name => rest) ?
+
+  The names of the features used for the dcg accumulator are 0 and rest: 0 has
+  been chosen for efficiency reasons: the feature containing the tokens is very
+  often used to discriminate between rules, and thus should be unified as soon
+  as possible; If there is no "negative" feature, the 0 feature is unified
+  first. 
+
+  The 'C' function is used for accumulation; It has four arguments:
+    'C'(Terms,FoldOk,Xs,Ys):
+  Terms  : the list representing the non-terminals to be recognised;
+  FoldOk : a boolean telling whether Terms may be folded into the program or
+           not;
+  Xs     : the input stream of non-terminals;
+  Ys     : the output stream of non-terminals.
+
+  You may modify the 'C' function, using:
+      set_C(my_C) ?
+  and defining my_C your own way. 'C' is only used during the expansion of your
+  grammar in Life clauses, so you can (you should) reset its value to the
+  default after translation (typing reset_C ?)
+  
+  The dcg accumulator has been a bit optimized to allow the folding of
+  terminals (i.e. terms to be accumulated in the dcg accumulator). 
+
+  A translation of : foo --> bar, [1] ? could be:
+  foo(rest => A,0 => B) :-
+	bar(rest => C,0 => B),
+	C = [1,A].
+
+  The last statement may be folded into the bar predicate, yielding:
+  foo(rest => A,0 => B) :-
+	bar(rest => [1|A],0 => B).
+
+  This translation is more efficient than the previous one, and the meaning of
+  the two clauses are identical, as long as the bar predicate does not contain
+  things like destructive assignments on its rest feature.
+
+  When code is inserted - for instance a cut - we have to make sure that this
+  folding does not bind variables occuring before the insertion: If we consider
+  foo --> !, [1] ?
+
+  this first translation (with folding):
+  foo(rest => A,0 => [1|A]) :-
+	!.   
+
+  has not the same behaviour as  this one (without folding):
+  foo(rest => A,0 => B) :-
+	!,
+	B = [1|A].
+
+  The first translation is not correct w.r.t. the usual meaning of cut. The
+  translator we propose here deals with this in a very simple way: no folding
+  is performed after a cut or a code insertion. FoldOk is the variable
+  used in the translator telling whether folding is authorized or not .
+
+  If some side-effect is expected inside a non-terminal, it is still possible
+  to obtain a translation where no folding is performed: 
+  foo --> bar, #, [1] ?
+
+  will be translated into 
+  foo(rest => A,0 => B) :-
+	bar,
+	A = B.
+
+  '#' has the same meaning as '[]', except that no folding is performed after
+  this symbol.
+
+
+FILES
+
+  The gram_translator.lf file contains the implementation of a translator of 
+  extended Definite Clause Grammars in Life.
+                                                                             
+  The file utils.lf contains utilities used by the translator; it is 
+  automatically loaded if it is in the same directory. 
+               
+
+EXAMPLES
+
+  1) A grammar
+
+  In his paper introducing attribute grammars, D.E. Knuth gave the example of a
+  grammar that could recognise floating binary numbers, and compute their
+  decimal value. We give here a first version of this grammar:
+
+  The feature 'value' represents the decimal value of the sequence derived from
+                                        a symbol;
+	      'length'	             length of a sequence of numbers;
+	      'rank'                 rank of a bit in a sequence.
+
+
+  z( value => V) --> l( value => V) ?
+  z( value => V1+V2*2^(-L)) --> 	
+  	l( value => V1), 
+	["."], 
+	l( value => V2, length => L) ?
+    
+  l( value => V3+V4, length => L1+1) --> 	
+	b( value => V3, rank => L1),
+	l( value => V4, length => L1) ?
+  l( value => V5, length => 1) -->  	
+	b( value => V5, rank => 0) ?
+    
+  b( value => (2^Sv), rank => Sv) --> [1] ? 
+  b( value => 0) --> [0] ?
+
+
+
+  To the query:
+  z( 0 => [1,1,0,1,1,0,1,0,1,1,".",1,1,1,0,1,0,1], 
+	rest => [], value => V)?
+    
+  wild_life answers: V = 875.914.
+  In fact, this version is very naive, and may be improved as follows:
+
+  z(tree => T, v => V) --> 
+	l(tree => T1,v => V1),
+	( 
+	    ["."], 
+	    !,
+	    l(tree => T2,v => V2,l => L),
+	    #( V= V1+V2*2^(-L), T=z(T1,".",T2) ) 
+	;
+	    #( T = z(T1), V = V1) 
+	)?
+
+
+  l(tree => T,v => V,l => L) -->  	
+	b( tree=>T1, v=>V1, s=>S1),
+	( 
+	    l( tree=>T2, v=>V2, l=>L2), !,
+	    # (S1=L2, V=V1+V2 , L=L2+1, T=l(T1,T2)) 
+	;
+            # ( S1=0, T=l(T1), V=V1, L=1)
+        ) ?
+                                
+
+  b(tree => b(X),s => Sv,v => V) -->
+	( 
+	    [1], 
+	    # ( !, X=1, V=2^Sv )
+	;
+            [0], 
+	    # ( X=0, V=0 ) 
+	) ?
+	
+	
+  The answer is of course the same, but this version runs about five times
+  faster than the previous one, and there is no useless choice-point left.
+  There are several reasons why this version runs much faster:
+
+  - use of cuts to prune the search tree;
+  - use of disjunctions to avoid redundant computation;
+  - computation of the numeric expressions once the values are known: very few
+    expressions residuate in the second version, whereas almost all of them do 
+    in the first version. 
+
+  2) Accumulators
+
+  Here is now an example using declared accumulators: count simply counts the
+  number of occurrences of a and b in a list:
+
+  acc_info(a,X,In,Out,acc_pred => Out = In + X, in_start => 0).
+  acc_info(b,X,In,Out,acc_pred => Out = In + X, in_start => 0).
+
+  pred_info(count,[a,b]).
+
+  count([]) :-- 
+	!, Y is a, Z is b, 
+	write("Total a: ",Y), nl,
+	write("Total b: ",Z), nl.
+
+  count([a|L]) :-- !, 1 + a, count(L).
+  count([b|L]) :-- !, 1 + b, count(L).
+  count([_|L]) :-- count(L).
+
+  
+  Without the preprocessor, we would have written:
+
+  count([],in_a => A,in_b => B,out_a => A,out_b => B) :-
+        !,
+        write("Total a: ",A),nl,
+        write("Total b: ",B),nl. 
+  count([a|A],in_a => B,in_b => C,out_a => D,out_b => E) :-
+        !,
+        count(A,in_a => B + 1,in_b => C,out_a => D,out_b => E).
+  count([b|A:@],in_a => B,in_b => C,out_a => D,out_b => E) :-
+        !,
+        count(A,in_a => B,in_b => C + 1,out_a => D,out_b => E). 
+  count([_|A],in_a => B,in_b => C,out_a => D,out_b => E) :-
+        count(A,in_a => B,in_b => C,out_a => D,out_b => E).
+
+
+AUTHOR 
+
+  Bruno Dumant
+
+  Copyright 1992-1993 Digital Equipment Corporation
+  All Rights Reserved
+
+

@@ -8,6 +8,8 @@
 
 % Last modified on Thu Mar 12 11:03:10 1992 by Hassan
 
+% Sample query: soap_cast(C)?
+
 soap_opera := tv_show(characters => [H,W,M],
                       husband => H:dick,
                       wife => W:alcoholic:long_lost_sister(H),

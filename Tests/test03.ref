@@ -37,6 +37,8 @@
 
 % ']' is undefined.
 
+% 'aborthook' is undefined.
+
 built_in <| @.
 '*list_object*' <| built_in.
 string <| built_in.

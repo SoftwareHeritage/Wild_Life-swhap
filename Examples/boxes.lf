@@ -7,13 +7,14 @@
 % A self-contained LIFE program for solving a 2D bin-packing problem
 %    including an X interface for showing solutions.
 %
+%
 % The problem:
 %    given a large box of known dimensions and a number of smaller boxes,
 %    also of known dimensions, pack the smaller boxes into the large box.
 %
 %
 %
-% Last modified on Fri Oct 16 11:57:10 MET 1992 by milsted
+% Last modified on Tue Jan 26 17:34:13 MET 1993 by milsted
 %      modified on Wed Jun 03 21:53:53 1992 by Hassan
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -231,47 +232,44 @@ draw_window :-
 		       eventmask => xDefaultEventMask),
 	setq (default_window, Window),
 	cond (colors_absent, get_colors),
-	event_handler (true).
+	event_handler.
 
 
 
 get_colors :-
-	setq_named_color ("aquamarine", aquamarine),
-	setq_named_color ("coral", coral),
-	setq_named_color ("cornflower blue", cornflowerblue),
-	setq_named_color ("gold", gold),
-	setq_named_color ("goldenrod", goldenrod),
-	setq_named_color ("khaki", khaki),
-	setq_named_color ("magenta", magenta),
-	setq_named_color ("medium slate blue", mediumslateblue),
-	setq_named_color ("medium spring green", mediumspringgreen),
-	setq_named_color ("orange red", orangered),
-	setq_named_color ("plum", plum),
-	setq_named_color ("salmon", salmon),
-	setq_named_color ("yellow", yellow),
+	setq_named_color (aquamarine, "aquamarine"),
+	setq_named_color (coral, "coral"),
+	setq_named_color (cornflowerblue, "cornflower blue"),
+	setq_named_color (gold, "gold"),
+	setq_named_color (goldenrod, "goldenrod"),
+	setq_named_color (khaki, "khaki"),
+	setq_named_color (magenta, "magenta"),
+	setq_named_color (mediumslateblue, "medium slate blue"),
+	setq_named_color (mediumspringgreen, "medium spring green"),
+	setq_named_color (orangered, "orange red"),
+	setq_named_color (plum, "plum"),
+	setq_named_color (salmon, "salmon"),
+	setq_named_color (yellow, "yellow"),
 	setq (colors_absent, false).
 
-setq_named_color (ColorString, ColorName) :-
+setq_named_color (ColorName, ColorString) :-
 	xRequestNamedColor (default_window, ColorString, Color),
 	setq (ColorName, Color).
 
 
 
-event_handler (true)
-	-> true
-	|  event_handler
-		(handle_event (xGetEvent (default_window,
-					  eventmask => xDefaultEventMask))).
+%
+%    If a keyboard or mouse event arrives, the event_handler fails,
+%    making the program backtrack.
+%
 
-handle_event (mouse_button)
-	-> true | fail.
+event_handler :-
+	freeze (handle_event (xGetEvent (default_window,
+					 eventmask => xDefaultEventMask))).
 
-handle_event (keyboard_event)
-	-> true | fail.
-
-handle_event (expose_event)
-	-> true | xRefreshWindow (default_window).
-
+handle_event (expose_event) :-
+	xRefreshWindow (default_window),
+	event_handler.
 
 
 

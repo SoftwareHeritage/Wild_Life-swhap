@@ -46,12 +46,14 @@ void handle_interrupt()
 {
   ptr_psi_term old_state;
   char *old_prompt;
-  char c,d;
+  int old_quiet; /* 21.1 */
+  int c,d; /* 21.12 (prev. char) */
   int count;
 
   if (interrupted) printf("\n");
   interrupted=FALSE;
   old_prompt=prompt;
+  old_quiet=quietflag; /* 21.1 */
   steptrace=FALSE;
 
   /* new_state(&old_state); */
@@ -63,6 +65,7 @@ void handle_interrupt()
   do {
     printf("*** Command ");
     prompt="(q,c,a,s,t,h)?";
+    quietflag=FALSE; /* 21.1 */
 
     do {
       c=read_char();
@@ -81,6 +84,7 @@ void handle_interrupt()
   } while (c=='h' || c=='?');
   
   prompt=old_prompt;
+  quietflag=old_quiet; /* 21.1 */
 
   switch (c) {
   case 'v':

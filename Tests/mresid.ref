@@ -61,14 +61,53 @@ X = int~, Y = int~.
 *** Yes
 X = int, Y = int.
 ----2> 
+*** No
+X = int~, Y = int~.
+--1> qwe
 *** Yes
 X = int, Y = int.
-------3> > 
+----2> 
+*** No
+X = int~, Y = int~.
+--1> qwe
+*** Yes
+X = int, Y = int.
+----2> 
+*** No
+X = int~, Y = int~.
+--1> qwe
+*** Yes
+X = int, Y = int.
+----2> 
+*** No
+X = int~, Y = int~.
+--1> qwe
+*** Yes
+X = int(1), Y = int.
+----2> 
+*** No
+X = int~, Y = int~.
+--1> qwe
+*** Yes
+X = 4, Y = int.
+----2> > 
 *** Yes
 A = [A]~.
 --1> qwe
 *** Yes
 A = [A].
+----2> 
+*** No
+A = [A]~.
+--1> qwe
+*** Yes
+A = [A].
+----2> 
+*** No
+A = [A]~.
+--1> qwe
+*** Yes
+A = [A](1).
 ----2> 
 *** No
 A = [A]~.
@@ -78,6 +117,18 @@ A = @~, B = @~.
 --1> qwe
 *** Yes
 A = 23, B = @.
+----2> 
+*** No
+A = @~, B = @~.
+--1> qwe
+*** Yes
+A = @, B = int.
+----2> 
+*** No
+A = @~, B = @~.
+--1> qwe
+*** Yes
+A = @(foo => @), B = @.
 ----2> 
 *** No
 A = @~, B = @~.

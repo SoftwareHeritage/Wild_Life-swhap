@@ -15,6 +15,7 @@ extern int do_residuation();
 extern void do_currying();
 
 extern void release_resid();
+extern void release_resid_eq(); /* 20.1 */
 extern void release_resid_notrail();
 
 #define deref(P)         {deref_ptr(P);if (deref_eval(P)) return TRUE;}

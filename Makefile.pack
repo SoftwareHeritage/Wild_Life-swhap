@@ -40,7 +40,7 @@ DATADIR  = .
 SETUPDIR = /proj/mips/lib/$(PACKAGE)
 SETUP    = $(SETUPDIR)/.set_up
 DATE     = `date`
-VERSION  = 0.0
+VERSION  = 0.91
 
 CCFLAGS = -O -DX11 -DALIGN=4 -DWORD=4 -DGARBCOL #-DUNIF_DEBUG
 # CCFLAGS = -g -DX11 -DALIGN=4 -DWORD=4 -DGARBCOL #-DUNIF_DEBUG
@@ -78,7 +78,7 @@ LOADFLAGS = -g -lm -lX11
 #    This section also includes the entries to rebuild everything
 #    in each subdirectory.  These entries will normally be the same.
 
-all: $(PROGRAM) .set_up .wild_life
+all: $(PROGRAM) .set_up
 	@echo
 	@echo "Life generation done"
 	@echo
@@ -88,10 +88,8 @@ $(PROGRAM) may-be-empty: $(PROGOBJECT)
 	$(CC) -o $(PROGRAM) $(PROGOBJECT) $(LOADFLAGS) 
 
 .set_up: .set_up_basis
-	sed -e "s%+SETUPDIR+%$(SETUPDIR)%g" < .set_up_basis > LifeDir/.set_up
+	sed -e "s%+SETUPDIR+%$(SETUPDIR)%g" < .set_up_basis > .set_up
 
-.wild_life: .wild_life_basis
-	sed -e "s%+SETUPDIR+%$(SETUPDIR)%g" < .wild_life_basis > LifeDir/.wild_life
 
 # ***************************************************************
 # Miscellaneous
@@ -276,7 +274,7 @@ install:
 ship:	tidy
 	shippackage $(PACKAGE) \
             -l /proj/mips/bin $(BIN) \
-            -l /proj/mips/lib $(DATADIR) \
+            -l /proj/mips/lib $(PACKAGE)=$(DATADIR) \
             -l /proj/man/mips/cat1 $(MANPAGE)
 
 get:
@@ -312,7 +310,7 @@ prof:
 PACKET_SIZE = 90
 DIRS = 
 PREFIX = Life
-KIT = README Makefile .set_up_basis .wild_life wild_life.1 \
+KIT = README Makefile .set_up_basis wild_life.1 \
       built_ins.c interrupt.c login.c print.c types.c error.c \
       copy.c lefun.c memory.c token.c x_pred.c \
       info.c life.c parser.c trees.c \
@@ -321,7 +319,7 @@ KIT = README Makefile .set_up_basis .wild_life wild_life.1 \
       extern.h lefun.h parser.h trees.h
 
 $(DATADIR)/$(PREFIX)01: *.c *.h distrib/README distrib/Makefile \
-      distrib/.set_up_basis distrib/.wild_life distrib/wild_life.1 
+      distrib/.set_up_basis distrib/wild_life.1 
 	(cd distrib; makekit -s$(PACKET_SIZE)k -n$(PREFIX) -t"Read README." $(DIRS) $(KIT))
 	mv distrib/$(PREFIX)0* $(DATADIR)
 

@@ -13,7 +13,7 @@
 %    are in the same row, or same column, or same diagonal.
 %
 %
-% Last modified on Fri Oct 16 12:01:36 MET 1992 by milsted
+% Last modified on Tue Jan 26 17:34:11 MET 1993 by milsted
 %      modified on Wed Jun 03 21:53:53 1992 by Hassan
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,6 +40,15 @@
 %    a position for each queen is generated then tested against the
 %    positions of already placed queens. Therefore, this program does
 %    not differ logically from its straight Prolog counterpart.
+%
+% 6. On an 8x8 board, the program draws a capital Greek letter Psi for
+%    a queen. On any other size board, the program draws a solid oval.
+%    If your system has the MIT chess font "chs-s50", you can obtain a
+%    real queen on an 8x8 board by making the following two changes:
+%    a) change the string "symbol24" to be "chs-s50"
+%       in the call: setq_font (chessfont, "symbol24")
+%    b) change the string "Y" to be "b"
+%	in the call: setq (queensymbol, "Y")
 %
 
 
@@ -77,7 +86,7 @@ draw_squares (X,Y)    :-
 	draw_squares (X,Y+1).
 
 draw_row (n,Y) :- !.
-draw_row (X,Y)    :-
+draw_row (X,Y) :-
 	xFillRectangle (default_window,
 			scale(X), scale(Y),
 			U:unit, U,
@@ -125,7 +134,7 @@ draw_queen (X,Y) :-
 		xDrawString (Window:default_window,
 			     X1 : (scale(A:(X-1)) + 0.18 * U:unit),
 			     Y1 : (scale(B:(Y-1)) + 0.65 * U),
-			     "b",
+			     queensymbol,
 			     font  => ChessFont:chessfont,
 			     color => QueenColor:queencolor),
 		xFillOval   (Window,
@@ -139,7 +148,7 @@ draw_queen (X,Y) :-
 		xDrawString (Window,
 			     X1,
 			     Y1,
-			     "b",
+			     queensymbol,
 			     font  => ChessFont,
 			     color => BoardColor:boardcolor(A,B)),
 		xFillOval   (Window,
@@ -211,42 +220,44 @@ draw_window (N) :-
 	setq (default_display, Display),
 	setq (default_window, Window),
 	cond (colors_and_font_absent, get_colors_and_font),
-	event_handler (true).
+	event_handler.
 
 
 
 get_colors_and_font :-
-	setq_color (180, 224, 201, white),
-	setq_color (19, 123, 103, black),
-	setq_color (204, 125, 50, queencolor),
-	setq_font  ("chs-s50", chessfont),
-	setq (colors_and_font_absent, false).
+	setq (colors_and_font_absent, false),
+	setq_color (white, 180, 224, 201),
+	setq_color (black, 19, 123, 103),
+	setq_color (queencolor, 204, 125, 50),
+	setq_font  (chessfont, "symbol24"),
+        setq       (queensymbol, "Y").
+			%% If your system has the MIT chess font "chs-s50"
+			%% installed, change the previous two lines to
+			%%	setq_font  (chessfont, "chs-s50"),
+			%%	setq       (queensymbol, "b").
 
-setq_color (R, G, B, ColorName) :-
+
+setq_color (ColorName, R, G, B) :-
 	xRequestColor (default_window, R, G, B, Color),
 	setq (ColorName, Color).
 
-setq_font (FontString, FontName) :-
+setq_font (FontName, FontString) :-
 	xLoadFont (default_display, Font, FontString),
 	setq (FontName, Font).
 
 
 
-event_handler (true)
-	-> true
-	|  event_handler
-		(handle_event (xGetEvent (default_window,
-					  eventmask => xDefaultEventMask))).
+%
+%    If a keyboard or mouse event arrives, the event_handler fails,
+%    making the program backtrack.
+%
 
-handle_event (mouse_button)
-	-> true | fail.
+event_handler :-
+	freeze (handle_event (xGetEvent (default_window,
+					 eventmask => xDefaultEventMask))).
 
-				
-handle_event (keyboard_event)
-	-> true | fail.
-
-handle_event (expose_event)
-	-> true | xRefreshWindow (default_window).
+handle_event (expose_event) :-
+	xRefreshWindow (default_window), event_handler.
 
 
 

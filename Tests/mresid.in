@@ -22,13 +22,30 @@ Y=int?
 .
 mresiduate([X:int,Y:int],write(qwe))?
 X=@?
+
 Y=@?
+
+X=int?
+
+Y=int?
+
+X=@(1)?
+
+X=4?
 .
 A=[A],mresiduate(A,write(qwe))?
 A=@?
 
+A=list?
+
+A=@(1)?
+
 .
 mresiduate([A,A,A,A,A,B],write(qwe))?
 A=23?
+
+B=int?
+
+A=@(foo=>@)?
 
 .

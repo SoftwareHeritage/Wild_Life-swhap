@@ -1,8 +1,14 @@
 % Copyright 1992 Digital Equipment Corporation
 % All Rights Reserved
 
-% Execute the query 'machine?' to run this program.
-% This program is in French.
+% Execute the query 'machine?' to run this program (this query
+% is executed automatically upon loading the program).
+% This program emulates the snack machine at PRL.
+% The program is in French.
+
+% The inputs are tokens (e.g., atoms like 'perrier', 'raider', and
+% integers like '2', '10').  The inputs do not have to be terminated
+% by a dot '.', a carriage return suffices.
 
 :: boisson(prix => 5).
 

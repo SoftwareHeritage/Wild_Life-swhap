@@ -1,12 +1,13 @@
 % Copyright 1992 Digital Equipment Corporation
 % All Rights Reserved
+% Author: Hassan Ait-Kaci
 
 % This is a magic square solver. It generates a size x size square of
 % numbers forming a permutation of [1,size*size] such that all rows, all
 % columns, and both diagonals, sum up to the same total.
 % Execute the query 'main?' or 'main(S)?' where S is an optional size
 % parameter.
-% Author: Hassan Ait-Kaci
+
 
 n_th(1,[H|T]) -> H.
 n_th(N:int,[_|T]) -> n_th(N-1,T).

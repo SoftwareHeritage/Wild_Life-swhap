@@ -156,29 +156,32 @@ X:load :-
                            strcon(SF:'*str*'(project(F,X)),
                                   '*life_ext*'))), !,
           ( '*loaded_file*'(CF), !,
-            write("*** File """,CF,""" was already loaded"), nl
+	    % 21.1
+            '*quiet_write_nl*'("*** File """,CF,""" was already loaded")
           ; simple_load(CF),
             assert('*loaded_file*'(CF)),
             '*load_3*'(M,CF,SF)
           )
-        ; write("*** File """,project(F,X),""" not found"), nl
+	; % 21.1
+          '*quiet_write_nl*'("*** File """,project(F,X),""" not found")
         ), !,
         '*load_2*'(L, M, X).
 
 '*load_3*'(B, CF, SF) :- B or CF$\==SF, !,
-	write("*** File """,CF,""" loaded"), nl.
+	% 21.1
+	'*quiet_write_nl*'("*** File """,CF,""" loaded").
 '*load_3*'.
 
 % The user may define a function load_path that returns a
 % disjunction of other directories to be searched.
 '*load_path*' -> { ""
-		 ; strcon((load_path | is_function(load_path)),{"";"/"})
+		 ; strcon((load_path | is_function(`load_path)),{"";"/"})
                  ; "+SETUPDIR+/Examples/"
                  }.
 
 % The user may define a function load_suffixes that returns a
 % disjunction of other suffixes to be used.
-'*life_ext*' -> { (load_suffixes | is_function(load_suffixes))
+'*life_ext*' -> { (load_suffixes | is_function(`load_suffixes))
                 ; ".lf"
                 ; ".life"
 		; ""
@@ -281,7 +284,7 @@ nl :- write("
 % '*nl_err*' :- '*put_err*'(10).
 
 % Beep
-beep :- put(7).
+beep :- write("").
 
 % Negation
 \+ X :- X,!,fail.
@@ -470,18 +473,31 @@ S1:string $\== S2:string -> not(S1$==S2).
 '*init*' :-
 	exists("./.wild_life"),
 	simple_load("./.wild_life"),
-	write("Loaded customizing file from current directory."), nl,
+	% 21.1
+	'*quiet_write_nl*'("Loaded customizing file from current directory."),
 	!.
 
 '*init*' :-
 	exists("~/.wild_life"),
 	simple_load("~/.wild_life"),
-	write("Loaded customizing file from home directory."), nl,
+	% 21.1
+        '*quiet_write_nl*'("Loaded customizing file from home directory."),
 	!.
 
 '*init*' :-
-	write("No customizing file loaded."), nl,
+	% 21.1
+        '*quiet_write_nl*'("No customizing file loaded."),
 	!.
+
+% 21.1
+'*quiet_write_nl*' :- '*quiet*', !.
+S:'*quiet_write_nl*' :- '*quiet_write_nl_loop*'(features(S),S), nl.
+
+% 21.1
+'*quiet_write_nl_loop*'([]) :- !.
+'*quiet_write_nl_loop*'([X|L], S) :-
+	write(project(X,S)),
+	'*quiet_write_nl_loop*'(L, S).
 
 % '*init*' :-
 % 	exists("+SETUPDIR+/.wild_life"),
