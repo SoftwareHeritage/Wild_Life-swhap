@@ -4,6 +4,9 @@
 % The SEND+MORE=MONEY puzzle.
 % Author: Hassan Ait-Kaci
 
+module("solve") ?
+public(solve) ?
+
 solve :- 
 	% Solutions where M=0 are uninteresting:
 	M=1,

@@ -25,7 +25,7 @@
  USAGE
 
  To start this program, just type 
-   > load(flowers) ?
+   > load("flowers") ?
    > main ?                                     
                   
  After a while, a panel of 5 buttons appears.

@@ -5,33 +5,58 @@ All Rights Reserved
 Example programs
 ----------------
 
-Programs that use the X interface:
+1- Simple Examples
 
-flowers	 	  Flower drawing application (see Flowers.doc).
-boxes		  Solving a 2D bin-packing problem.
-queens		  Solving the N-queens problem.
-
-Other programs:
-
-parser	  	  LIFE parser (see Parser.doc).
-tokenizer	  LIFE tokenizer (see Tokenizer.doc).
-loader		  File loading using the LIFE parser (see Loader.doc).
-shell		  Powerful user shell (see Shell.doc).
-expander	  Extended DCG preprocessor (see Expander.doc).
-schedule	  PERT scheduler (see Schedule.doc).
-gauss		  Incremental Gaussian equation solver.
-solve		  The SEND+MORE=MONEY puzzle.
-nl		  Simple natural language parser.
+simple            Some basic examples - look at the code
 xxxooo		  xxxooo puzzle (this file is Prolog-compatible).
-machine		  Simulation of the PRL snack machine (in French).
-magic		  Naive magic square solver.
-prime		  Prime numbers.
-hamming		  Hamming problem.
-dictionary	  Dictionary insertion/lookup routine.
+                  input: xxxooo ?
+prime		  Prime numbers. (type constraints)
+                  input: primes_to(Number) ?
+dictionary	  Dictionary insertion/lookup routine. (type constraints)
+                  input: dictionary
 soap		  Illustration of type constraints.
-inherit		  Illustration of unification and type inheritance.
-school		  Illustration of unification and type inheritance.
-happy		  Illustration of unification and type inheritance.
+                  input: soap ?
+solve		  The SEND+MORE=MONEY puzzle. (residuation)
+                  input: solve ?
+schedule	  PERT scheduler (see Schedule.doc). (inheritance, residuation)
+                  input: sch_1 ? or sch_2 ? or sch_3 ? or sch_4 ?
+
+2- Puzzles
+
+magic		  Naive magic square solver.
+                  input: magic ?
+queens		  Solving the N-queens problem. (uses the X interface) 
+                  input: queens ?
+boxes		  Solving a 2D bin-packing problem. (uses the X interface)
+                  input: boxes ?
+
+3- Misc programs
+
+hamming		  Hamming problem.
+                  input: hamming ?
+nl		  Simple natural language parser.
+                  input: nl_parse(list_of_words) ?
+machine		  Simulation of the PRL snack machine (in French).
+                  input: machine ?
+display_terms     A program to display psi-terms. 
+	          input: display_terms ?
+                  To have an example psi-term displayed: display_example ?
+                  To display a term from the prompt: show_term(Term) ?
+palette           A program to compose your prefered color ?
+                  input: palette ?
+
+
+4- Bigger applications
+
+
+gauss		  Incremental Gaussian equation solver.(see Gauss.doc)
+flowers	 	  Flower drawing application (see Flowers.doc).
+	          uses the X interface.
+                  input: flowers ?
+
+SuperLint/	  A lint-like checker for C with user-customizable 
+		  checking rules.  See the SuperLint/ subdirectory
+		  for details.
 
 
 How to load and run a program
@@ -39,18 +64,16 @@ How to load and run a program
 
 For example, the Flowers application is loaded with the query:
 
-	> load(flowers)?
+	> import("flowers")?
 
+*** WARNING: ALWAYS TYPE THE FILE NAME AS A STRING ***
 This will load the file flowers.lf as well as all auxiliary files that
-are necessary.  If the filename contains non-alphanumeric characters,
-it must be surrounded by quotes or double-quotes.
+are necessary. Always write the file name between string quotes.
 
+After loading, the Flowers application is run with the query:
 
-Notes
------
+	> flowers?
 
-The shell program is the only one to use the builtins defined
-in the source file raw.c; if this source file is left out then
-only the shell will stop working.  The file raw.c defines raw
-(i.e., unbuffered) terminal I/O and is dependent on low-level
-system calls.  It is the most non-portable part of the system.
+If you want to load all the demos, type the query:
+        
+        > load("all_demos") ?

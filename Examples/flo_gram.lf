@@ -7,7 +7,7 @@
 % The syntax of the rules is the following:
 %
 % Axiom ::> List of Symbols ?
-% Head # Conditions ==>   List of Symbols 
+% Head ** Conditions ==>   List of Symbols 
 %
 % Applying one derivation step to a sequence of symbols results in replacing in
 % the sequence each symbol by the left hand side of a rule, provided that the
@@ -44,20 +44,25 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+module("rewrite_trans") ?
+
+open("utils") ?
+
+public( ==>,::>,**) ?
 op(1200,xfy,==>)?
 op(1200,xfy,::>)?
-op(1100,xfy,#)?
+op(1100,xfy,**)?
 
-non_strict(#)?
+non_strict(**)?
 
 %
 %  translation of axioms and rules 
 %
 
-(Lhs # Chs ==> Rhs) :-  !,
+(Lhs ** Chs ==> Rhs) :-  !,
 	NewLhs = transSymb(Lhs,position=>head),
 	NewRhs = transSymb(Rhs,position=>body),!,
-	(prob_symb(rootsort(Lhs),_), !, T=true ; T=false ),
+	(prob_symb(root_sort(Lhs),_), !, T=true ; T=false ),
 	( 
           R1 = oneLevel(NewLhs,NewRhs,Chs,T),
 	       assert(R1),
@@ -73,7 +78,7 @@ non_strict(#)?
 (Lhs ==> Rhs) :-  
 	NewLhs = transSymb(Lhs,position=>head),
 	NewRhs = transSymb(Rhs,position=>body),!,
-	(prob_symb(rootsort(Lhs),_), !, T=true ; T=false ),
+	(prob_symb(root_sort(Lhs),_), !, T=true ; T=false ),
 	( R1 = oneLevel(NewLhs,NewRhs,1,T),
 	       assert(R1),
 	       fail ;
@@ -87,7 +92,7 @@ non_strict(#)?
 
 
 (Axiome ::> Rhs ) :-
-	Axiome##1 = N, 
+	Axiome.1 = N, 
         R=newn(Rhs,N,_,_,_,_),
 	assert(( Axiome :- N>=2, R )).
 
@@ -101,11 +106,13 @@ non_strict(#)?
 %%% transSymb takes care of probabilistic rules: transSymb adds the appropriate
 %%% arguments to the symbols declared by probSymbol.
 
+public(proba) ?
+
 transSymb((Symbol,Others),position=>P) -> 
 	Symbol , transSymb(Others,position=>P)
                         | Others :< @, !,
 			  (prob_symb(Symbol,NumRules),!, 	
-			   Symbol##proba = `(random(NumRules)) ;
+			   Symbol.proba = `(random(NumRules)) ;
 			   succeed ) .
 transSymb( Symbol,position=>P) -> 
 	Symbol | (prob_symb(Symbol,NumRules),!,
@@ -113,13 +120,14 @@ transSymb( Symbol,position=>P) ->
 		       (
 			   I = index(Symbol),
 			   I:@(Index),
-			   Symbol##proba = Index, 
+			   Symbol.proba = Index, 
 			   setPred(I,Index+1)
 		       ),
-		       Symbol##proba = `(random(NumRules))
+		       Symbol.proba = `(random(NumRules))
 		   );
 		   succeed ) .
 
+public(probSymbol) ?
 dynamic(prob_symb)?
 
 probSymbol(Symbol,N) :- F=index(Symbol),
@@ -131,7 +139,7 @@ index(Symbol) -> str2psi(strcon("index",psi2str(Symbol))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% oneLevel rewrites (a # cond ==> b,c) into (a1 :- cond, !, b, c) 
+%%% oneLevel rewrites (a ** cond ==> b,c) into (a1 :- cond, !, b, c) 
 %%% and adds the appropriate arguments.
 
 oneLevel(Lhs ,Rhs, 1,true) -> 
@@ -142,38 +150,39 @@ oneLevel(Lhs ,Rhs, 1,false) ->
 oneLevel(Lhs ,Rhs, Chs,B) -> 
 	( new1h(Lhs,X,Y) :- Chs, !, new1b(Rhs,X,Y,[],S,[],S2) ).
 
-
+public(oldState,newState) ?
 new1h(Symbol,X,Y) -> NS | NS=suffixRoot(Symbol,"1"),
                           NS=strip(Symbol),
-                          NS##oldState = X,
-                          NS##newState = Y.
+                          NS.oldState = X,
+                          NS.newState = Y.
 
 new1b((Symbol,Others),X,Y,S1,S3,SP1,SP3) -> 
 	new1b(Symbol,X,Z,S1,S2,SP1,SP2), 
 	new1b(Others,Z,Y,S2,S3,SP2,SP3).
                          
+public(push,pop,startPol,endPol,dot) ?
 
 new1b(push,X,Y,S1,S2,SP1,SP2) -> succeed | S2=[X|S1],Y=X,SP1=SP2.
 new1b(pop,X,Y,S1,S2,SP1,SP2) ->  succeed | S1=[Y|S2],SP1=SP2.
 
 new1b(startPol,X,Y,S1,S2,SP1,SP2) -> 
-	succeed | S2=S1, Y=X, [[(X##coord##1,X##coord##2)]|SP1]=SP2.
+	succeed | S2=S1, Y=X, [[(X.coord.1,X.coord.2)]|SP1]=SP2.
 new1b(endPol,X,Y,S1,S2,SP1,SP2) -> 
 	endPol(L) | S2=S1, Y=X, SP1=[L|SP2].
 new1b(dot,X,Y,S1,S2,SP1,SP2) -> 
 	succeed | S2=S1, Y=X, SP1=[L|SP3], 
-                  SP2=[[(X##coord##1,X##coord##2)|L]|SP3].                                        
-new1b(Symbol,X,Y,S1,S2,SP1,SP2) -> NS | NS=rootsort(Symbol),
+                  SP2=[[(X.coord.1,X.coord.2)|L]|SP3].                                        
+new1b(Symbol,X,Y,S1,S2,SP1,SP2) -> NS | NS=root_sort(Symbol),
                           NS=stripNoProba(Symbol),
-			  NS##oldState = X,
-                          NS##newState = Y,
+			  NS.oldState = X,
+                          NS.newState = Y,
                           S1=S2, 
 			  SP1=SP2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% twoLevel rewrites (a # cond ==> b,c) into 
-%%%                   (aN :- cond !, ( b1, c1, fail ; succeed )),
+%%% twoLevel rewrites (a ** cond ==> b,c) into 
+%%%                   (aN :- cond, !, ( b1, c1, fail ; succeed )),
 %%% and adds the appropriate arguments, and performing the right state
 %%% assignments (otherwise the turtle state would be lost on backtracking). The
 %%% reason for this is mainly memory recovery.
@@ -198,7 +207,7 @@ twoLevel(Lhs ,Rhs, Chs) ->
 
 new2h(Symbol) -> NS | NS=suffixRoot(Symbol,"N"),
                       NS=strip(Symbol),
-                      NS##rank=2.
+                      NS.rank=2.
 
 new2b((Symbol,Others),X,Y,S1,S3,SP1,SP3) -> 
 	new2b(Symbol,X,Z,S1,S2,SP1,SP2), 
@@ -208,25 +217,25 @@ new2b(push,X,Y,S1,S2,SP1,SP2) -> succeed | S2=[X|S1],Y=X,SP1=SP2.
 new2b(pop,X,Y,S1,S2,SP1,SP2) ->  succeed | S1=[Y|S2],SP1=SP2.
 
 new2b(startPol,X,Y,S1,S2,SP1,SP2) -> 
-	succeed | S2=S1, Y=X, [[(X##coord##1,X##coord##2)]|SP1]=SP2.
+	succeed | S2=S1, Y=X, [[(X.coord.1,X.coord.2)]|SP1]=SP2.
 new2b(endPol,X,Y,S1,S2,SP1,SP2) -> 
 	endPol(L) | S2=S1, Y=X, SP1=[L|SP2].
 new2b(dot,X,Y,S1,S2,SP1,SP2) -> 
 	succeed | S2=S1, Y=X, SP1=[L|SP3], 
-                  SP2=[[(X##coord##1,X##coord##2)|L]|SP3].
+                  SP2=[[(X.coord.1,X.coord.2)|L]|SP3].
 
 new2b(Symbol,X,Y,S1,S2,SP1,SP2) -> NS 
-        | R=rootsort(Symbol),
+        | R=root_sort(Symbol),
           ( turtleSymb(R), !, NS=R ; NS=suffixRoot(R,"1")),
           NS=strip(Symbol),
-          NS##oldState = `(X),
-          NS##newState = Y,
+          NS.oldState = `(X),
+          NS.newState = Y,
           S1=S2,
           SP1=SP2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% twoLevel rewrites (a # cond  ==> b,c) into 
+%%% twoLevel rewrites (a ** cond  ==> b,c) into 
 %%%             (aN(N) :- cond, !, ( M = N-1, bN(M), cN(M), fail ; succeed )) 
 
 
@@ -258,7 +267,7 @@ newn(dot,N,S1,S2,SP1,SP2) ->
 newn(Symbol,N,S1,S2,SP1,SP2) -> NS 
         | NS=suffixRoot(Symbol,"N"),
           NS=strip(Symbol),
-          NS##rank=N,
+          NS.rank=N,
           S1=S2,
           SP1=SP2.
 
@@ -272,7 +281,7 @@ stripNoProba(Symbol) -> X | strNP(X,features(Symbol),Symbol).
 
 strNP(X,[],Symbol) :- !.
 strNP(X,[proba|L],Symbol) :- !.
-strNP(X,[A|L],Symbol) :- X##A = Symbol##A.
+strNP(X,[A|L],Symbol) :- X.A = Symbol.A.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -298,6 +307,9 @@ strNP(X,[A|L],Symbol) :- X##A = Symbol##A.
 %%% decrement or set the thickness of the lines drawn. setDefault is used to
 %%% reset the default color.
 
+public(rpu,rmu,rpl,rml,rph,rmh,turn,fd,fu,decThick,setThick,setDefault) ?
+public(rpuN,rmuN,rplN,rmlN,rphN,rmhN,turnN,fdN,fuN,
+        decThickN,setThickN,setDefaultN) ?
 turtleSymb({rpu(A);rmu;rpl(A);rml;rph(A);rmh;turn;fd(A);fu(A);
             decThick;setThick(A);setDefault}).
 
@@ -310,11 +322,11 @@ turtleSymb({rpu(A);rmu;rpl(A);rml;rph(A);rmh;turn;fd(A);fu(A);
 genTurtleDefs :-  
 	turtleSymb(Symb), 
 	T = copy_pointer(Symb),
-	T##oldState=`state,
-	T##newState=NS,
+	T.oldState=`state,
+	T.newState=NS,
 	NT=suffixRoot(Symb,"N"),
         NT=strip(Symb),
-	NT##rank=N,
+	NT.rank=N,
 	assert((NT :- ( T,
 		        setq(state,NS),fail ; succeed )) 
                ),
@@ -432,6 +444,7 @@ turn(oldState => turtleState(coord => C,
 % drawing
 %
 
+public(draw_window,drFunc,drColor,realDistance) ?
 fd(R,
    oldState => OS:turtleState(coord => @(X, Y, Z),
                               direc => D:@(@(XH,YH,ZH),TL,TU),
@@ -491,6 +504,8 @@ setThick(A,oldState => turtleState(coord => C,
 % Back to default values
 %
 
+public(defaultColor) ?
+
 setDefault( oldState => S , newState => S) :- 
 	setq(drColor,defaultColor).
 
@@ -499,11 +514,11 @@ setDefault( oldState => S , newState => S) :-
 %%% Symbols used to draw polygons.
 
 
-startPol(SP1,[[(X:(state##coord)##1,X##2)]|SP1]).
+startPol(SP1,[[(X:(state.coord).1,X.2)]|SP1]).
 
 endPol(L) :- xFillPolygon(draw_window,L,color=>drColor).
 
-dot([L1|L2],[[(X:(state##coord)##1,X##2)|L1]|L2]).
+dot([L1|L2],[[(X:(state.coord).1,X.2)|L1]|L2]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -516,19 +531,20 @@ dot([L1|L2],[[(X:(state##coord)##1,X##2)|L1]|L2]).
 
 %%% Turtle's initial position
 
-
+public(initPosition) ?
 initPosition(X,Y,Z:{0;real}) :- 
 	!,
 	S = state,
-	S##coord <- @(X,Y,Z),
+	S.coord <- @(X,Y,Z),
 	setq(state,S).
 
 
 %%% Turtle's initial orientation
 
+public(initDirection) ?
 initDirection(AH,AL,AU) :- 
 	S = state,
-	S##direc <- 
+	S.direc <- 
 	   turnU(AU,turnH(AH,turnL(AL,@(@(0,1,0),@(-1,0,0),@(0,0,1))))),
 	setq(state,S).
 
@@ -545,6 +561,7 @@ turnL(AL,@(TH,TL,TU)) ->  @(xmat(TH,TU,Cos:cos(AL),Sin:sin(AL)),
 
 %%% Turtle's initial color
 
+public(initColor) ?
 initColor(C) :- setq(defaultColor,C),
                 setq(drColor,C).
 
@@ -552,12 +569,15 @@ initColor(C) :- setq(defaultColor,C),
 
 %%% Turtle's initial thickness
 
-initThick(T) :- (X:state)##thick <- T,
+public(initThick) ?
+initThick(T) :- (X:state).thick <- T,
                 setq(state,X).
 
 
 %%% Pre-Computing of cosinus and sinus
 
+public(initAngle) ?
+public(delta) ?
 initAngle(Delta) :- setq(cosDelta,cos(Delta)),
                     setq(sinDelta,sin(Delta)),
                     setq(delta,Delta).

@@ -1,4 +1,4 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %                XTOOLS: BASIC BUTTONS AND ACTIONS
@@ -17,6 +17,45 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+module("xtools_flo") ?
+public( open_panel,close_panel,create_new_panel,update_panel,
+	add_button,refresh_button,find_chosen_button,choose_button,
+
+	on_off_button,toggle_button,textfield,rectangle_button,
+	rectangle_look,ledandtext,textfield_look,
+
+	action,color_block,choice,name,title,panel,shade,highlight,depth,text,
+        selected_text,on,buttons,
+
+	draw_static,draw_dynamic,draw_buttons,draw_basic_button,switch_off,
+ 
+        button_font,textfield_font,color_name_font,
+
+        shade_color,highlight_color,
+	button_color,text_color,on_off_color,toggle_color,
+	textfield_color,selected_textfield_color,color_name_textfield_color,
+	text_in_field_color,text_in_selected_field_color,
+        led_color,led_shade_color,led_highlight_color,
+	def_led_color,def_led_shade,def_led_highlight,
+	panel_color,panel_highlight,panel_shade,
+	
+        catch_panel_events,
+
+        default_display,default_window,
+
+	color,
+	aquamarine,black,blue,'blue violet',brown,'cadet blue',coral,
+        'cornflower blue',cyan,'dark green','dark olive green','dark orchid',
+        'dark slate blue', 'dark slate grey','dark turquoise','dim grey',
+        firebrick,'forest green',gold,goldenrod,green,'green yellow',grey,
+        'indian red',khaki,'light blue','light grey','light steel blue',
+        'lime green',magenta,maroon,'medium aquamarine','medium blue',
+        'medium orchid','medium sea green','medium slate blue',
+        'medium spring green','medium turquoise','medium violet red',
+        'midnight blue','navy blue',orange,'orange red','orchid','pale green',
+        pink,plum,red,salmon,'sea green',sienna,'sky blue','slate blue',
+        'spring green','steel blue','light brown',thistle,turquoise,
+        violet,'violet red',wheat,white,yellow,'yellow green') ?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -24,12 +63,15 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+global(event_mask <- xExposureMask \/ xKeyPressMask \/ xButtonPressMask) ?
+
 create_new_panel( X0 ,Y0, DX, DY, choice => F, title => T, name => P) :- 
 	xCreateWindow (default_display, 
 	               X0, Y0, DX, DY,
 		       Window,
 		       windowtitle => T,
-		       color       => panel_color,
+		       eventmask => event_mask,
+		       color     => panel_color,
 		       show => false),
 	xSetWindowBorderWidth(Window,2),
 	Panel = panel( window  => Window,
@@ -72,7 +114,7 @@ create_new_panel( X0 ,Y0, DX, DY, choice => F, title => T, name => P) :-
 % add a button to a panel
 
 add_button( B, panel => P) :-
-	Panel:@(window => PW, buttons => PB)&rootsort(P),
+	Panel:@(window => PW, buttons => PB)&root_sort(P),
 	B = @( on => false, window  => PW),
         PB <-[B|copy_pointer(PB)],
 	update_panel(Panel), !.
@@ -127,11 +169,11 @@ toggle_action(A:@(on => ON, action => RAct), panel => P) :-
 text_action( A, panel => P:@(selected_text => Q)) :-
 	(
 	    Q :== true, !,
-	    PrevButton = Q##1,
+	    PrevButton = Q.1,
 	    cond( B:(not( PrevButton ===  A)),
 	          ( 
-		      PrevButton##action,
-		      PrevButton##on <- false,
+		      PrevButton.action,
+		      PrevButton.on <- false,
 		      refresh_button(PrevButton) 
 		  )
 		)
@@ -140,8 +182,8 @@ text_action( A, panel => P:@(selected_text => Q)) :-
 	),
 	cond( B, 
 	      (
-		  A##on <- true,
-		  P##clearable <- true,
+		  A.on <- true,
+		  P.clearable <- true,
 		  refresh_button(A),
 		  Q <- true(A)
 	      )).
@@ -153,15 +195,15 @@ text_action( A, panel => P:@(selected_text => Q)) :-
 handle_char( B, P, char  => C) :-
 	cond(   C =:= 13, %%% return
 	        (
-		    P##selected_text <- false,
-		    B##on <- false,
+		    P.selected_text <- false,
+		    B.on <- false,
 		    refresh_button(B),
-		    AA = copy_pointer(B##action)&@(panel => P),
+		    AA = copy_pointer(B.action)&@(panel => P),
 		    AA
 		),
 		(
-		    cond( Q:(P##clearable),
-		          (   B##text <- "",
+		    cond( Q:(P.clearable),
+		          (   B.text <- "",
 			      refresh_button(B),
 			      Q <- false
 			  )),
@@ -175,7 +217,7 @@ handle_char( B, P, char  => C) :-
 	    ).
 
 add_new_char(B:@(text => T),K) :-
-	T <- strcon(T,psi2str(chr(K))),
+	T <- strcon(T,chr(K)),
 	refresh_button(B).
 
 remove_last_char(B:@(text => T)) :-
@@ -309,12 +351,12 @@ draw_dynamic( textfield_look( X0, Y0, DX, DY,
 
 
 catch_panel_events(P) :-
-	Panel:@(window => PW)&rootsort(P),
+	Panel:@(window => PW)&root_sort(P),
 	handle_panel_event (xGetEvent ( PW, eventmask => 5),
 			    PW, P).
 
 
-handle_panel_event ( mouse_button (x => X, y => Y), PW, P) ->      
+handle_panel_event ( button_event (x => X, y => Y), PW, P) ->      
 	true 
     | 
         handle_panel_mouse_event(X,Y,PW,P).
@@ -327,7 +369,7 @@ handle_panel_event(keyboard_event (char => C), PW, P) ->
 
 handle_panel_mouse_event( X, Y, PW, P) :-
 	(
-	    Panel:@( choice => C, busy => B)&rootsort(P),
+	    Panel:@( choice => C, busy => B)&root_sort(P),
 	    ( 
 		B :== true,!,
                 handle_panel_event (xGetEvent ( PW, eventmask => 5),
@@ -346,7 +388,7 @@ handle_panel_mouse_event( X, Y, PW, P) :-
 	).
 
 handle_panel_keyboard_event(C,PW,P) :-
-	Panel:@(selected_text => S, busy => B)&rootsort(P),
+	Panel:@(selected_text => S, busy => B)&root_sort(P),
 	(
 	    B :== true,!,
 	    handle_panel_event (xGetEvent ( PW, eventmask => 5),
@@ -371,7 +413,7 @@ handle_panel_keyboard_event(C,PW,P) :-
 %%% refresh event: 32768 is xExposureMask
 
 catch_refresh_event(P) :-
-	rootsort(P)&@(window => PW),
+	root_sort(P)&@(window => PW),
 	handle_refresh_event (xGetEvent ( PW, eventmask =>  32768),
 			      PW).
 
@@ -393,18 +435,18 @@ handle_refresh_event ( expose_event, PW) ->
 %%%
 
 set_panel(P,Panel) :-
-	RS1 = rootsort(P),
-	RS2 = rootsort(P),
+	RS1 = root_sort(P),
+	RS2 = root_sort(P),
 	retract(( RS1 :- @)),!,
 	Q = RS2&strip(Panel),
 	assert(Q).
 set_panel(P,Panel) :-
 	dynamic(P),
-	RS = rootsort(P),
+	RS = root_sort(P),
 	Q = RS&strip(Panel),
 	assert(Q).
 update_panel(Panel) :-
-	P = rootsort(Panel),
+	P = root_sort(Panel),
 	retract(( P :- @)),
 	assert(Panel).
 
@@ -413,13 +455,13 @@ update_panel(Panel) :-
 %%%
 
 open_panel(P) :-
-	rootsort(P)&@(window => PW),
+	root_sort(P)&@(window => PW),
 	handle_refresh_event (xGetEvent ( PW, eventmask =>  32768),
 			      PW),
 	xShowWindow(PW).
 
 close_panel(P) :-
-	rootsort(P)&@(window => PW),
+	root_sort(P)&@(window => PW),
 	xFlushEvents( PW, eventmask => 32768),
 	xHideWindow(PW).
 
@@ -513,7 +555,7 @@ draw_shade_rectangle( X1, Y1, DX, DY,
 
 find_chosen_button([A:@(associated_action => Act, choice => C)|B],X,Y,Panel) :-
 	!,
-	cond( prove(copy_term(C)&@(X,Y)),
+	cond( copy_term(C)&@(X,Y),
 	      copy_pointer(Act)&@(panel => Panel),
 	      find_chosen_button(B,X,Y,Panel)).
 find_chosen_button([]).
@@ -521,7 +563,7 @@ find_chosen_button([]).
 
 %%% Find a button in a panel
 
-choose_button(X,Y,Panel) :- find_chosen_button(Panel##buttons,X,Y,Panel).
+choose_button(X,Y,Panel) :- find_chosen_button(Panel.buttons,X,Y,Panel).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -582,7 +624,7 @@ named_color(green),
 named_color('green yellow'),
 named_color(grey),
 named_color('indian red'),
-named_color(khaki,r=>159),
+named_color(khaki),
 named_color('light blue'),
 named_color('light grey'),
 named_color('light steel blue'),

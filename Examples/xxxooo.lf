@@ -3,7 +3,10 @@
 
 % This program is compatible with Prolog.
 
-solve :-
+module("xxxooo") ?
+public(xxxooo) ?
+
+xxxooo :-
 	nl,
 	nl,
 	solution(S),

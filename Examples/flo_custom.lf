@@ -25,23 +25,30 @@
 
 %
 % Fonts (Fonts in comments are suggestions for use instead of the font
-% appearing in the xLoadFont predicate.
+% appearing in the xLoadFont predicate).
 %
 
-xLoadFont(default_display,ButtonFont,"helvetica_bold10"),
+xLoadFont(default_display,ButtonFont,
+         "-*-helvetica-bold-r-*-*-14-*-*-*-*-*-*-*"),
 	                                                  %% avantgarde_demi10 
 	                                                  %% 8x13Bold
 							  %% times_bold10
 							  %% courier_bold10
 setq(button_font,ButtonFont) ?
-xLoadFont(default_display,TextFieldFont,"helvetica10"),
+
+xLoadFont(default_display,TextFieldFont,
+	"-*-helvetica-medium-r-*-*-14-*-*-*-*-*-*-*"),
+	                                                  %% helvetica10
                                                           %% avantgarde_book10
 	                                                  %% r14
 	                                                  %% souvenir_light10
 	                                                  %% times_roman10
 	                                                  %% courier_bold10
 setq(textfield_font,TextFieldFont) ?
-xLoadFont(default_display,ColorNameFont,"helvetica_bold18"),
+
+xLoadFont(default_display,ColorNameFont,
+	"-*-helvetica-bold-r-*-*-*-180-*-*-*-*-*-*"),
+	                                                  %% helvetica_bold18
                                                           %% avantgarde_demi18 
 	                                                  %% times_bold18
 							  %% vr-20

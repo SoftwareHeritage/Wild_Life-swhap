@@ -1,4 +1,4 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -41,6 +41,14 @@
 % This is the main file of the demo. All the other files are automatically    %
 % loaded if they are in the same directory.                                   %
 %                                                                             %
+% Notice: This is quite an 'old' Life program. It means that features have    %
+%         been added to the language since it was written, especially global  %
+%         and persistent variables: most constant functions (reset using setq)%
+%         could be changed to persistent terms, saving memory and time.       %
+%                                                                             %
+%         The toolkit is an old version of that given under the name "xtools".%
+%         We recommend using the new one to build new applications.           %
+%                                                                             
 % Author: Bruno Dumant                                                        %
 %                                                                             %
 % Copyright 1992 Digital Equipment Corporation                                %
@@ -50,18 +58,25 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+module("flowers") ?
+public(flowers) ?
+
+import("x") ?
 
 %%% loading utilities and customization files
 
-load(flo_utils, flo_gram, flo_xtools, flo_custom) ?
-
+load("flo_utils"), open("utils") ?
+load("flo_gram"), open("rewrite_trans") ?
+load("flo_flowerdef"),open("flower_def") ?
+load("flo_xtools"), open("xtools_flo") ?
+load("flo_custom") ?
 
 %%%
 %%% MAIN PROCEDURE
 %%%
 
 
-main  :-
+flowers :-
 	(
 	    catch(enter_flowers),
 	    init_default_values,
@@ -135,17 +150,17 @@ oo_led_txt <| on_off_button.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% PostScript output
+%%% postscript output
 
 post_out(B):-
-	cond( B##on,
+	cond( B.on,
 	      open_panel(postscript_panel),
 	      close_panel(postscript_panel)).
 
 %%% drawing initialization
 
 turtle_settings(B) :- 
-	cond( B##on,
+	cond( B.on,
 	      open_panel(draw_init_panel),
 	      close_panel(draw_init_panel)).
 
@@ -153,7 +168,7 @@ turtle_settings(B) :-
 %%% Colors
 
 select_color(B) :-
-	cond( B##on,
+	cond( B.on,
 	      open_panel(palette),
 	      close_panel(palette)).
 
@@ -175,11 +190,11 @@ draw_a_flower :-
 	).
 
 initSingle :-
-	    DP:draw_init_panel:@(selected_text => B), %% if a button is still
+	    DP:draw_init_panel&@(selected_text => B), %% if a button is still
 	    cond(   B :== true,                       %% selected in
 	            (                                 %% draw_init_panel, its
-			But:(B##1)##action,           %% value is used.
-			But##on <- false,
+			But:(B.1).action,           %% value is used.
+			But.on <- false,
 			B <- false,
 			refresh_button(But),
 			update_panel(DP)
@@ -233,8 +248,8 @@ create_postscript_panel :-
 
 	    draw_buttons([B1,B2]),
 	    fail
-	;
-	    write("PostScript panel created ..."),nl
+	;   
+	    write("PostScript panel created ... "),nl
 	).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -254,9 +269,9 @@ set_file(B1:@( text => T )) :-
 save_postscript(panel => P:@(selected_text => B)) :-
 	cond(   B :== true,
 	        (
-		    But:(B##1)##action,
+		    But:(B.1).action,
 		    B <- false,
-		    But##on <- false,
+		    But.on <- false,
 		    refresh_button(But)
 		)),
 	(
@@ -414,7 +429,7 @@ create_palette :-
 		         choice => palette_choice,
 		         name   => Palette:palette,
 		         title  => "Palette"),
-	rootsort(Palette)&@(window => PW),
+	root_sort(Palette)&@(window => PW),
         setq(palette_window,PW),
 	(
 	    fill_colors(all_colors,50,50,0,PW),
@@ -469,7 +484,7 @@ palette_choice(X,Y,Palette) :-
 	(
 	    selected_color(X,Y,Palette),!
 	;
-	    find_chosen_button(Palette##buttons,X,Y,Palette)
+	    find_chosen_button(Palette.buttons,X,Y,Palette)
 	).
 
 
@@ -480,7 +495,7 @@ selected_color(X,Y,
 	show_color(X,Y,Win,C),
 	( 
 	    S :== true,!,
-	    @(Color) = (Button:(S##1))##color_block,
+	    @(Color) = (Button:(S.1)).color_block,
 	    setq(Color,C),
 	    cond( Color :== `background_color,
 	          xSetWindowColor( draw_window, C)),
@@ -520,13 +535,13 @@ element_choice(B:@(on => Bool, color_block => @(C)),
 	(
 	    Bool :== true,!,
 	    cond( S :== true,
-	          switch_off(S##1) ),
+	          switch_off(S.1) ),
 	    S <- true(B),
 	    (
 		xFillRectangle(Win,200,400,400,100,
 		               color => color_name_textfield_color),
 		xDrawString(Win,300,456,
-		            eval(C)##name,font => color_name_font),
+		            eval(C).name,font => color_name_font),
 		fail
 		    
 	    ;
@@ -579,7 +594,7 @@ create_drawing_pad :-
 	xCreateWindow( default_display,150,130,700,700,DrWin, 
 	               color => background_color, 
 		       windowtitle => "Drawing Pad",
-		       eventsmask => 32772,
+		       eventmask => 32772,
 		       show => false),
 	xSetWindowBorderWidth(DrWin,2),
 	setq(draw_window,DrWin),
@@ -587,7 +602,7 @@ create_drawing_pad :-
 
 %%% events handler
 
-handle_draw_event ( mouse_button (x => X, y => Y), DrWin) ->      
+handle_draw_event ( button_event (x => X, y => Y), DrWin) ->      
 	true 
     |
         handle_draw_mouse(X,Y),
@@ -614,8 +629,8 @@ handle_draw_mouse(X,Y) :-
 	setq(xstart,X),
 	setq(ystart,Y),
 	DrInitPanel:draw_init_panel&@(buttons => [_,_,_,_,_,YB,XB]),
-	XB##text <- int2str(X),
-	YB##text <- int2str(Y),
+	XB.text <- int2str(X),
+	YB.text <- int2str(Y),
 	refresh_button(XB),
 	refresh_button(YB),
 	update_panel(DrInitPanel).
@@ -623,138 +638,13 @@ handle_draw_mouse(X,Y) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  GRAMMATICAL DEFINITION OF A FLOWER
-%
-%
-% A simpler version of this definition can be found page 27 of the above
-% mentioned book.
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-initAngle(pi/10) ?
-probSymbol(seg,5) ?
-probSymbol(twoleafs,5) ?
-
-
-axiomflower::> plant ?
-
-
-plant(oldState=>S,newState=>S ) :- stop_draw.  %%% stop_draw makes the drawing
-					       %%% stop if stop_drawing is set
-					       %%% to true. 
-plant ==>
-	internode,rpu,
-	push,
-            rpu(-2*delta),rph(-2*delta),
-	    push,rpu(-2*delta),leaf,pop,
-	    internode,
-	    push,rpu(2*delta),leaf,pop,
-	    rmu,
-	    push,plant,flower,pop,
-	    rpu(2*delta),plant,flower,
-	pop,
-	push,plant,rpu,flower,pop ?
-
-
-internode(oldState=>S,newState=>S ) :- stop_draw. 
-internode ==> 
-	fd,seg,
-	push,rph(-2*delta),rpl(2*delta),leaf,pop,
-	push,rph(-2*delta),rpl(-2*delta),leaf,pop,
-	fd,seg ?
-
-
-seg(oldState=>S,newState=>S ) :- stop_draw .
-seg ==>  seg,twoleafs,fd,seg ?
-seg ==>  seg,fd,seg ?
-seg ==>  seg,fd,seg ?
-seg ==>  seg ?
-seg ==>  seg ?
-
-twoleafs(oldState=>S,newState=>S):- stop_draw.
-twoleafs ==> 
-	push,rph(-2*delta),rpl(2*delta),leaf,pop,
-	push,rph(-2*delta),rpl(-2*delta),leaf,pop ?
-
-twoleafs ==> 
-	push,rph(-4*delta),rpl(2*delta),leaf,pop,
-	push,rph(-4*delta),rpl(-2*delta),leaf,pop ?
-
-twoleafs ==> 
-	push,rph(-6*delta),rpl(2*delta),leaf,pop,
-	push,rph(-6*delta),rpl(-2*delta),leaf,pop ?
-
-twoleafs ==> 
-	push,rph(-8*delta),rpl(2*delta),leaf,pop,
-	push,rph(-8*delta),rpl(-2*delta),leaf,pop ?
-
-
-twoleafs ==> 
-	push,rph(pi),rpl(2*delta),leaf,pop,
-	push,rph(pi),rpl(-2*delta),leaf,pop ?
+module("user") ?
+open("flowers") ?
 
 
 
 
-leaf(oldState=>S,newState=>S ) :- stop_draw .
-leaf ==>
-	push,
-	     setLeaf,
-	            startPol,
-		            rpu,fu,dot,rmu,fu(`(2*realDistance)),dot,
-			    rmu,fu,dot,rpu,
-                               turn,
-                            rpu,fu,dot,rmu,fu(`(2*realDistance)),dot,
-			    rmu,fu,dot,
-                      endPol,
-             setDefault,
-         pop ?
-
-
-flower(oldState=>S,newState=>S):- stop_draw.
-flower ==> 
-	push,
-	    pedicel,rmh,petal,rph(2*2*delta),
-                        petal,rph(2*2*delta),
-			petal,rph(2*2*delta),
-			petal,rph(2*2*delta),
-			petal,rph(2*2*delta), 
-	pop ?
-
-
-pedicel(oldState=>S,newState=>S) :- stop_draw .
-pedicel ==>  fd(`(2*realDistance)) ?
-
-
-petal(oldState=>S,newState=>S )  .
-petal ==> push,setStamen,rml,fd,pop,
-          push,setPetal,startPol,
-                             rpl(2*2*delta),
-                             rpu(-2*delta),fu(`(2.5*realDistance)),dot,
-                             rpu(2*delta),fu(`(2.5*realDistance)),dot,
-			     turn,
-                             rpu(-2*delta),fu(`(2.5*realDistance)),dot,
-                             rpu(2*delta),fu(`(2.5*realDistance)),dot,
-                        endPol,
-          setDefault,pop ?
 
 
 
-setLeaf(oldState=>S,newState=>S ) :-
-	setq(drColor,leaf_color).
-setLeaf ==> setLeaf ?
-
-setPetal(oldState=>S,newState=>S ) :- setq(drColor,petal_color).
-setPetal ==> setPetal ?
-
-setStamen(oldState=>S,newState=>S) :-  setq(drColor,stamen_color).
-setStamen ==> setStamen ?
-
-stop_draw :-  
-	cond(stop_drawing, 
-	     throw(draw_start)).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,14 +1,13 @@
 % Copyright 1992 Digital Equipment Corporation
 % All Rights Reserved
 
-% Execute the query 'machine?' to run this program (this query
-% is executed automatically upon loading the program).
+% Execute the query 'machine?' to run this program.
 % This program emulates the snack machine at PRL.
 % The program is in French.
 
-% The inputs are tokens (e.g., atoms like 'perrier', 'raider', and
-% integers like '2', '10').  The inputs do not have to be terminated
-% by a dot '.', a carriage return suffices.
+module("machine") ?
+public( machine,gini,perrier,oasis,coca,coca_light,cake,lion,bounty,
+        raider,kit_kat,rien) ?
 
 :: boisson(prix => 5).
 
@@ -22,16 +21,17 @@ cake <| snack.
 lion <| snack.
 bounty <| snack.
 raider <| snack.
-yes <| snack.
+kit_kat <| snack.
 
 snack <| a_vendre.
 boisson <| a_vendre.
+rien <| a_vendre.
 
 :: cake(prix => 3).
 :: lion(prix => 3).
 :: bounty(prix => 3.5).
 :: raider(prix => 3.5).
-:: yes(prix => 4).
+:: kit_kat(prix => 4).
 
 
 :: piece.
@@ -42,6 +42,8 @@ snack <| objet.
 
 :: objet(quantite => N:int, prix => real).
 
+global(arret_machine) ?
+
 dynamic(machine_contient)?
 
 machine_contient(
@@ -50,7 +52,7 @@ machine_contient(
 	lion(quantite => 7),
 	bounty(quantite => 2),
 	raider(quantite => 3),
-	yes(quantite => 7),
+	kit_kat(quantite => 7),
 	gini(quantite => 2),
 	perrier(quantite => 9),
 	oasis(quantite => 2),
@@ -63,7 +65,16 @@ machine_contient(
 	piece(prix => 10,quantite => 1)
 	]).
 
-machine :- 
+
+machine :-
+	(
+	    arret_machine = get_choice,
+	    machine2
+	;
+	    succeed
+	).
+
+machine2 :- 
 	write('Distributeur de Snacks et Boissons de DEC PRL.'),
 	nl,
 	nl,
@@ -74,8 +85,9 @@ machine :-
 	affiche(Contenu),
 	nl,
 	lire(Commande),
-	write('Vous avez commande un ',rootsort(Commande:a_vendre(prix => P))),
-	ajouter(rootsort(Commande):@(prix => P,quantite => -1)),
+	write('Vous avez commande un ',
+	      root_sort(Commande:a_vendre(prix => P))),
+	ajouter(root_sort(Commande) & @(prix => P,quantite => -1)),
 	nl,
 	nl,
 	write('Vous devez payer ',P,'F.'),
@@ -87,18 +99,24 @@ machine :-
 	nl,
 	fail.
 
-machine :- machine.
+machine2 :- machine2.
 
 
 lire(C:a_vendre(quantite => 1)) :-
 	machine_contient(Choses),
 	repeter,
 	(
-		write('Que voulez vous acheter ? '),
+	        write('Que voulez vous acheter ? '),
 		read_halt(C),
 		nl,
-		dans(C,Choses),
-		!
+		(
+		    C :== rien,
+		    set_choice(arret_machine),
+		    fail
+		;
+		    dans(C,Choses),
+		    !
+		)
 	;
 		write('Il n''y en a pas a vendre...'),
 		nl,
@@ -120,7 +138,7 @@ payer(N:real,C) :-
 		rendre_le_plus(-N-0.5)
 	),
 	nl,
-	write('Prenez votre ',rootsort(C),' dans le distributeur SVP.'),
+	write('Prenez votre ',root_sort(C),' dans le distributeur SVP.'),
 	nl,
 	nl,
 	! .
@@ -146,7 +164,8 @@ rendre_le_plus(N) :-
 payer(0,C) :- 
 	write('Le compte est bon.'),
 	nl,
-	write('Veuillez prendre votre ',rootsort(C),' dans le distributeur...'),
+	write('Veuillez prendre votre ',
+	      root_sort(C),' dans le distributeur...'),
 	nl,
 	nl,
 	! .
@@ -177,8 +196,8 @@ ajouter(C) :-
 mettre( C:@(prix => P,quantite => R),
 	[A:@(prix => P,quantite => Q)|Reste],
 	[B:@(prix => P,quantite => Q+R)|Reste]) :- 
-	A=rootsort(C),
-	B=rootsort(C),
+	A=root_sort(C),
+	B=root_sort(C),
 	!.
 
 mettre(C,[A|B],[A|B2]) :- mettre(C,B,B2).
@@ -199,7 +218,7 @@ apres(C,N,P) -> apres([P|C],N-1,P).
 	
 	
 somme_egale(list,0) -> [].
-somme_egale([],N) -> undefined.
+somme_egale([],N) -> {}.
 somme_egale([A|B],N) -> {[A|somme_egale(B,N-A)];somme_egale(B,N)}.
 
 
@@ -224,7 +243,7 @@ affiche([A|B]) :-
 
 dans(A,[ B:@(quantite => N:int) | @]) :-
 	N>0,
-	A=rootsort(B).
+	A=root_sort(B).
 
 dans(A,[B|C]) :- dans(A,C).
 
@@ -238,7 +257,5 @@ read_halt(C) :-
 	read_token(D),
 	end_check(D, C).
 
-end_check(end_of_file, _) :- halt.
-end_check(C, C).
-
-machine ?
+end_check(end_of_file, _) :- nl,set_choice(arret_machine),fail.
+end_check(C,C).

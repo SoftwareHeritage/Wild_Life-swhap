@@ -1,4 +1,3 @@
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Copyright 1992 Digital Equipment Corporation
@@ -12,11 +11,6 @@
 %    given a large box of known dimensions and a number of smaller boxes,
 %    also of known dimensions, pack the smaller boxes into the large box.
 %
-%
-%
-% Last modified on Tue Jan 26 17:34:13 MET 1993 by milsted
-%      modified on Wed Jun 03 21:53:53 1992 by Hassan
-%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -25,12 +19,12 @@
 %
 % 1. Type "boxes?" to start the program.
 %
-% 2. The program will stop after drawing the X-window before finding
+% 2. The program will stop after drawing the panel before finding
 %    the first solution. Use backtracking thereafter to get each solution.
 %
 % 3. Backtracking may be done either in the usual manner by typing ";"
 %    at the Wild_LIFE prompt, or else by clicking any mouse button or
-%    typing any key while the pointer is in the X-window.
+%    typing any key while the pointer is in the panel.
 %
 % 4. The program illustrates LIFE's residuation principle: the placement
 %    constraints for the boxes are set up BEFORE any actual values are
@@ -38,26 +32,51 @@
 %    "test-then-generate" strategy as opposed to "generate-then-test".
 %
 
+module("boxes") ?
+public(boxes) ?
+
+import("xtools") ?
+import("lists")?
+
+global(boxeswindow) ?
+T = xExposureMask \/ xKeyPressMask \/ xButtonPressMask,
+global(boxesmask <- T) ?
 
 boxes :-
-	draw_window,
-	make_boxes (Boxes),
-	constrain_boxes (Boxes),
 	(
-	  succeed	%% stop before finding the first solution
+	   C1 = get_choice,
+	   Q = push_button(text => "quit",
+			   action => (set_choice(C1),fail)),
+	   Panel = panel(title => "BOXES")
+		   containing Q t_left_of
+	                h_box(5) t_left_of
+			frame(X0,Y0,width => Width:(bigbox_width * S:scale),
+				    height => Height:(bigbox_height * S)),
+           create_box(Panel),
+	   xCreateWindow (default_display,
+		       	  X0,Y0,Width,Height,
+			  boxeswindow,
+		       	  color => white,
+	                  border => 0,
+		          parent => Panel.window,
+			  eventmask => boxesmask),
+	   make_boxes (Boxes),
+	   constrain_boxes (Boxes),
+	   event_handler,
+	   (
+	      succeed	%% stop before finding the first solution
+	   ;
+	      place_boxes (Boxes)
+	   )
 	;
-	  place_boxes (Boxes)
+	   succeed
 	).
 
 
-
-
-%
 %    A box consists of an x coordinate, a y coordinate,
 %    a width, a height, and a color.
-%
 
-:: box (X:posint, Y:posint, W:int, H:int, color => C).
+:: bbox (X:posint, Y:posint, W:int, H:int, color => C).
 
 posint := I:int | I >= 0.
 
@@ -73,19 +92,19 @@ posint := I:int | I >= 0.
 
 make_boxes (Boxes) :-
 	Boxes = sort_boxes
-	  ([ box (_, _, 1, 3, color => aquamarine),
-	     box (_, _, 2, 2, color => coral),
-	     box (_, _, 3, 2, color => cornflowerblue),
-	     box (_, _, 3, 1, color => gold),
-	     box (_, _, 4, 1, color => goldenrod),
-	     box (_, _, 4, 2, color => khaki),
-	     box (_, _, 1, 4, color => magenta),
-	     box (_, _, 2, 3, color => mediumslateblue),
-	     box (_, _, 2, 4, color => mediumspringgreen),
-	     box (_, _, 2, 1, color => orangered),
-	     box (_, _, 7, 1, color => plum),
-	     box (_, _, 3, 3, color => salmon),
-	     box (_, _, 1, 6, color => yellow)
+	  ([ bbox (_, _, 1, 3, color => aquamarine),
+	     bbox (_, _, 2, 2, color => coral),
+	     bbox (_, _, 3, 2, color => 'cornflower blue'),
+	     bbox (_, _, 3, 1, color => gold),
+	     bbox (_, _, 4, 1, color => goldenrod),
+	     bbox (_, _, 4, 2, color => khaki),
+	     bbox (_, _, 1, 4, color => magenta),
+	     bbox (_, _, 2, 3, color => 'medium slate blue'),
+	     bbox (_, _, 2, 4, color => 'medium spring green'),
+	     bbox (_, _, 2, 1, color => 'orange red'),
+	     bbox (_, _, 7, 1, color => plum),
+	     bbox (_, _, 3, 3, color => salmon),
+	     bbox (_, _, 1, 6, color => yellow)
 	  ]).
 
 
@@ -144,21 +163,21 @@ place_box (Box : @(X,Y,W,H)) :-
 
 draw_box (@(X,Y,W,H,color => C)) :-
 	(
-	  xFillRectangle (Window : default_window,
+	  xFillRectangle (Window : boxeswindow,
 			  X1 : (X * S:scale + O:offset),
 			  Y1 : (Y * S + O),
 			  W1 : (W * S - D:(2*O)),
 			  H1 : (H * S - D),
 			  color => C),
 	  xDrawRectangle (Window, X1, Y1, W1, H1, linewidth => 5),
-	  xDrawRectangle (Window, X1, Y1, W1, H1, color => xWhite)
+	  xDrawRectangle (Window, X1, Y1, W1, H1, color => white)
 	;
 	  xFillRectangle (Window,
 			  X1 - 3,
 			  Y1 - 3,
 			  W1 + 6,
 			  H1 + 6,
-			  color => xWhite),
+			  color => white),
 	  fail
 	).
 
@@ -188,74 +207,10 @@ interval (From, To) ->
 	cond (From > To, [], [From | interval(From+1,To)]).
 
 
-sort_boxes (Boxes) -> q_sort (Boxes, order => bigger_box).
+sort_boxes (Boxes) -> gen_quicksort (Boxes, order => bigger_box).
 
 bigger_box (@(_,_,W1,H1), @(_,_,W2,H2)) ->
 	size (W1,H1) >= size (W2,H2).
-
-q_sort (L, order => O) -> undlist (dqsort (L, order => O)).
-
-undlist (X\Y) -> X | Y=[].
-
-dqsort ([H|T], order => O) ->
-	(L1\L2) : where ((Less,More)  : split (H,T,([],[]),order => O),
-                        (L1 \ [H|L3]): dqsort (Less,order => O),
-                        (L3 \ L2)    : dqsort (More,order => O)).
-dqsort ([]) -> L\L.
-
-split (X, [H|T], (Less, More), order => O) ->
-	cond (O(H,X),
-              split (X, T, ([H|Less], More), order => O),
-              split (X, T, (Less, [H|More]), order => O)).
-split (@, [], P) -> P.
-
-
-
-
-%
-%    The X interface:
-%	- draw the window
-%       - get the colors for the boxes
-%	- the event handler
-%
-
-draw_window :-
-	xOpenConnection (Display),
-	xCreateWindow (Display,
-		       100,
-		       10,
-		       bigbox_width * S:scale,
-		       bigbox_height * S,
-		       Window,
-		       color => xWhite,
-		       windowtitle => "Boxes",
-		       eventmask => xDefaultEventMask),
-	setq (default_window, Window),
-	cond (colors_absent, get_colors),
-	event_handler.
-
-
-
-get_colors :-
-	setq_named_color (aquamarine, "aquamarine"),
-	setq_named_color (coral, "coral"),
-	setq_named_color (cornflowerblue, "cornflower blue"),
-	setq_named_color (gold, "gold"),
-	setq_named_color (goldenrod, "goldenrod"),
-	setq_named_color (khaki, "khaki"),
-	setq_named_color (magenta, "magenta"),
-	setq_named_color (mediumslateblue, "medium slate blue"),
-	setq_named_color (mediumspringgreen, "medium spring green"),
-	setq_named_color (orangered, "orange red"),
-	setq_named_color (plum, "plum"),
-	setq_named_color (salmon, "salmon"),
-	setq_named_color (yellow, "yellow"),
-	setq (colors_absent, false).
-
-setq_named_color (ColorName, ColorString) :-
-	xRequestNamedColor (default_window, ColorString, Color),
-	setq (ColorName, Color).
-
 
 
 %
@@ -263,13 +218,14 @@ setq_named_color (ColorName, ColorString) :-
 %    making the program backtrack.
 %
 
-event_handler :-
-	freeze (handle_event (xGetEvent (default_window,
-					 eventmask => xDefaultEventMask))).
+event_handler -> 
+	handle_event (xGetEvent (boxeswindow,
+			         eventmask => boxesmask)).
 
-handle_event (expose_event) :-
-	xRefreshWindow (default_window),
-	event_handler.
+handle_event (expose_event) -> true |
+	xRefreshWindow (boxeswindow),
+	handle_event (xGetEvent (boxeswindow,
+			         eventmask => boxesmask)).
 
 
 
@@ -283,7 +239,9 @@ handle_event (expose_event) :-
 %         requested.
 %
 
-setq (x_coords, interval(1, bigbox_width))?
-setq (y_coords, interval(1, bigbox_height))?
+X = interval(1, bigbox_width),
+global (x_coords <- X)?
+Y = interval(1, bigbox_height),
+global (y_coords <- Y)?
 
-setq (colors_absent, true)?
+where -> @.

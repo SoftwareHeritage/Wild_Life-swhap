@@ -9,29 +9,31 @@
 
 
  USAGE (see examples)
- In a query, declare the activities you consider and the information you have
+ In a query, declare the tasks you consider and the information you have
  about them:
-       A1 = activity( duration => 34, prerequisites => [A2,A3]), ...
+       A1 = task( duration => 34, prerequisites => [A2,A3]), ...
             %%% A2 and A3 must be defined in the same query, and are references
-            %%% to activities that must be performed before A1 
+            %%% to tasks that must be performed before A1 
 
- when all activities are declared, they may be visualized with
-       visAllActs(List_of_Acts)?
+ when all tasks are declared, they may be visualized with
+       visAllTasks(List_of_Tasks)?
+
+ See the sample inputs in schedule.lf
 
 
  FILES
- The file schedule.lf contains the scheduler. .in files contain examples.
+ The file schedule.lf contains the scheduler. 
 
 
  DESCRIPTION
  
  All constraints are set during the type check, and they are released as soon
  as if enough information is known.
- Each time an activity is defined, the earlyStart field is initialized with the
+ Each time a task is defined, the earlyStart field is initialized with the
  earlyCalc function. This function takes the list of prerequisites as argument,
- and residuates on the activities which are still undefined.
+ and residuates on the tasks which are still undefined.
  
- Defining the activity also sets a set of constraints on the lateStart field of
+ Defining the task also sets a set of constraints on the lateStart field of
  the prerequisites. Here again, these constraints residuate until enough
  information is known.
 

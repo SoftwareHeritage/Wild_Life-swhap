@@ -6,24 +6,27 @@
 
 % Insert, look up, or check a definition in an ordered binary tree
 
+module("dictionary") ?
+public(dictionary) ?
+
 delay_check(tree)?
-:: tree(name=>string,def=>string,left=>tree,right=>tree).
+:: tree(name => string,def => string,left => tree,right => tree).
 
-contains(tree(name=>N,def=>D),   Name, Def) :-
-        Name=N, Def=D.
+contains(tree(name => N,def => D),Name,Def) :-
+        Name = N, Def = D.
 
-contains(tree(name=>N,left=>L),  Name, Def) :-
-        N$>Name,
+contains(tree(name => N,left => L),Name,Def) :-
+        N $> Name,
         contains(L, Name, Def).
 
-contains(tree(name=>N,right=>R), Name, Def) :-
-        N$=<Name,
-        contains(R, Name, Def).
+contains(tree(name => N,right => R),Name,Def) :-
+        N $=< Name,
+        contains(R,Name,Def).
 
-main :-
-        CN="cat", CD="furry feline",
-        DN="dog", DD="furry canine",
+dictionary :-
+        CN = "cat", CD = "furry feline",
+        DN = "dog", DD = "furry canine",
         contains(T,CN,CD),  % Insert cat definition
         contains(T,DN,DD),  % Insert dog definition
         contains(T,CN,Def), % Look up cat definition
-        write("A ",CN," is a ",Def),nl.
+        write("A ",CN," is a ",Def),nl,!.

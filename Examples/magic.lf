@@ -5,8 +5,11 @@
 % This is a magic square solver. It generates a size x size square of
 % numbers forming a permutation of [1,size*size] such that all rows, all
 % columns, and both diagonals, sum up to the same total.
-% Execute the query 'main?' or 'main(S)?' where S is an optional size
+% Execute the query 'magic ?' or 'magic(S) ?' where S is an optional size
 % parameter.
+
+module("magic") ?
+public(magic) ?
 
 
 n_th(1,[H|T]) -> H.
@@ -55,7 +58,7 @@ all_equal([H|T],H) :- all_equal(T,H).
 sum_up(L) -> reduce((+),0,L).
 
 number -> number_to(size*size).
-number_to(N:int) -> cond(N<1, {}, {1;1+number_to(N-1)}).
+number_to(N:int) -> cond(N < 1, {}, {1;1+number_to(N-1)}).
 
 assign_numbers([]) :- !.
 assign_numbers([number|L]) :- assign_numbers(L).
@@ -66,7 +69,7 @@ display_square([Row|Rows]) :- nl, display_row(Row), display_square(Rows).
 display_row([]) :- nl,!.
 display_row([N|T]) :- write("	",N),display_row(T).
 
-main(S:{size;int}) :-
+magic(S:{size;int}) :-
 	!,
 	setq(size,S),
 	all_different(Entries:entries(Square:grid)),

@@ -1,16 +1,21 @@
 % Copyright 1992 Digital Equipment Corporation
 % All Rights Reserved
 
-% FILE. . . . . /_/udir7/_/hassan/life/nl.life
-% EDIT BY . . . Hassan Ait-Kaci
-% ON MACHINE. . Prlp22
-% STARTED ON. . Thu Mar 28 14:33:16 1991
-
-% Last modified on Wed Feb 26 18:59:18 1992 by Hassan
-
 % This parses simple English sentences.
 % Try the query 'nl_parse([john,runs],S)?'
 % The grammar given here is very small and limited.
+
+module("nl") ?
+public( nl_parse,
+	flu, malaria, frisbee, monk, monks, lunch, lunches, steak, steaks,
+	salad, file, files, compiler, pascal, computer, computers, mary, john,
+	spot, life, she, he, it, walks, walk, walked, runs, ran,
+	compile, compiles, compiled, compile, compiles, compiled, delete,
+	deletes, deleted, eat, eats, ate, catch, catches, caught, my, her, his,
+	its, the, a, some, many, small, big, fast, slow, bad, good, did,
+	should, could, would, can, will, but, slowly, quickly, correctly, in,
+	over, from, of, to, who, with, which, what, when, why, who, how, hey,
+	how, why, yes, no ) ? 
 
 % The Type Hierarchy:
 
@@ -343,21 +348,21 @@ dictionary(deletes, tv(subject => animate, number => singular, object => file,
 		       tense => present)).
 dictionary(deleted, tv(subject => animate, object => file, tense => past)).
 dictionary(eat, tv(subject => animate(eating_habit => EH), 
-		    object => {food;information}:eaten_by(EH),
+		    object => {food;information} & eaten_by(EH),
 		    number => plural, tense => present)).
 dictionary(eats, tv(subject => animate(eating_habit => EH),
-		    object => {food;information}:eaten_by(EH),
+		    object => {food;information} & eaten_by(EH),
 		    number => singular, tense => present)).
 dictionary(ate, tv(subject => animate(eating_habit => EH), 
-		    object => {food;information}:eaten_by(EH),
+		    object => {food;information} & eaten_by(EH),
 		    tense => past)).
-dictionary(catch, tv(subject => animate:can_catch(Y),
+dictionary(catch, tv(subject => animate & can_catch(Y),
                      object => Y:{projectile; disease},
 		     number => plural, tense => present)).
-dictionary(catches, tv(subject => animate:can_catch(Y),
+dictionary(catches, tv(subject => animate & can_catch(Y),
                        object => Y:{projectile; disease},
 		       number => singular, tense => present)).
-dictionary(caught, tv(subject => animate:can_catch(Y),
+dictionary(caught, tv(subject => animate & can_catch(Y),
                        object => Y:{projectile; disease},
 		       tense => past)).
 
@@ -422,4 +427,3 @@ lookup([], []).
 lookup([Word|Rest], [Def|More]) :-
 	dictionary(Word, Def),
 	lookup(Rest, More).
-
