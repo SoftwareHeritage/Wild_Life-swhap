@@ -1,0 +1,11 @@
+#! /bin/csh
+
+# Copyright 1992 Digital Equipment Corporation
+# All Rights Reserved
+
+# As a prelude to mailing to a user:
+
+/bin/rm *.o wild_life wild_life.old Life.* .set_up
+touch wild_life wild_life.old
+chmod a+x wild_life wild_life.old
+cp Makefile.rel Makefile

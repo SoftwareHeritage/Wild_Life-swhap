@@ -1,0 +1,277 @@
+> 
+*** Yes
+> > > |    |    |    |    |    |    |    |    |    |    |    |    |    
+% non_strict(non_strict)?
+% 'non_strict' is a built-in predicate.
+
+% non_strict(dynamic)?
+% 'dynamic' is a built-in predicate.
+
+% non_strict(delay_check)?
+% 'delay_check' is a built-in predicate.
+
+% 'assert' is a built-in predicate.
+
+% 'asserta' is a built-in predicate.
+
+% 'retract' is a built-in predicate.
+
+% 'clause' is a built-in predicate.
+
+non_strict(load)?
+_A:load :-
+        trace(_B,_C),
+        '*load_2*'(_D:features(_A),length(_D) > 1,_A),
+        trace(_B,_C).
+
+'*load_2*'([],@,@) :-
+        !.
+'*load_2*'([_A|_B:@],_C,_D) :-
+        (exists(_E:strcon('*load_path*',strcon(_F:'*str*'(project(_A,_D)),'*life_ext*'))),
+        !,
+        ('*loaded_file*'(_E),
+        !,
+        write("*** File """,_E,""" was already loaded"),
+        nl ; simple_load(_E),
+        assert('*loaded_file*'(_E)),
+        '*load_3*'(_C,_E,_F)) ; write("*** File """,project(_A,_D),""" not found"),
+        nl),
+        !,
+        '*load_2*'(_B,_C,_D).
+
+'*load_3*'(_A,_B,_C) :-
+        _A or _B $\== _C,
+        !,
+        write("*** File """,_B,""" loaded"),
+        nl.
+'*load_3*' :-
+        succeed.
+
+'*load_path*' -> {"";
+                  strcon((load_path | is_function(load_path)),{"";"/"});
+                  "/_/vanroy/_/Life/Examples/"}.
+
+'*life_ext*' -> {(load_suffixes | is_function(load_suffixes));".lf";".life";""}.
+
+non_strict(listing)?
+_A:listing :-
+        trace(_B,_C),
+        '*listing_2*'(features(_A),_A),
+        trace(_B,_C).
+
+'*listing_2*'([],@) :-
+        !.
+'*listing_2*'([_A],_B) :-
+        !,
+        nl,
+        '*listing_3*'(_A,_B).
+'*listing_2*'([_A|_B:@],_C) :-
+        nl,
+        '*listing_3*'(_A,_C),
+        '*listing_2*'(_B,_C).
+
+'*listing_3*'(_A,_B) :-
+        _C = project(_A,_B),
+        '*listing*'(_C),
+        '*listing_4*'(_C).
+
+'*listing_4*'(_A) :-
+        var(_A),
+        !,
+        write("% '@' is the top sort."),
+        nl.
+'*listing_4*'(_A) :-
+        '*listing_4a*'(_A).
+
+'*listing_4a*'(_A) :-
+        is_sort(_A),
+        is_value(_A) = false,
+        !,
+        '*listing_5*'(parents(_A),_A),
+        '*listing_6*'(children(_A),_A).
+'*listing_4a*'(@) :-
+        succeed.
+
+'*listing_5*'([],@) :-
+        !.
+'*listing_5*'([_A|_B:@],_C) :-
+        writeq(_C),
+        write(" <| "),
+        writeq(_A),
+        write("."),
+        nl,
+        '*listing_5*'(_B,_C).
+
+'*listing_6*'([],@) :-
+        !.
+'*listing_6*'([_A|_B:@],_C) :-
+        writeq(_A),
+        write(" <| "),
+        writeq(_C),
+        write("."),
+        nl,
+        '*listing_6*'(_B,_C).
+
+non_strict(op)?
+op(_A,_B,_C,functor => _C,kind => _B,precedence => _A) :-
+        trace(_D,_E),
+        ('*op_2*'(_A,_B,_C),
+        trace(_D,_E) ; trace(_D,_E),
+        fail).
+
+% non_strict('*op*')?
+% '*op*' is a built-in predicate.
+
+'*op_2*'(_A,_B,_C) :-
+        nonvar(_A),
+        nonvar(_B),
+        nonvar(_C),
+        _C = list,
+        !,
+        '*op_3*'(_C,_A,_B).
+'*op_2*'(@,@,_A) :-
+        nonvar(_A),
+        _A = list,
+        !,
+        '*write_err*'("*** Error: invalid operator declaration."),
+        '*nl_err*'.
+'*op_2*'(_A,_B,_C) :-
+        nonvar(_A),
+        nonvar(_B),
+        nonvar(_C),
+        !,
+        '*op*'(_A,_B,_C).
+'*op_2*'(_A,_B,_C) :-
+        member(op(_A,_B,_C),'*ops*').
+
+'*op_3*'([]) :-
+        !.
+'*op_3*'([_A|_B:@],_C,_D) :-
+        '*op_2*'(_C,_D,_A),
+        '*op_3*'(_B,_C,_D).
+
+call_handler(_A) :-
+        is_sort(_A),
+        !,
+        '*write_err*'("*** Error: the sort '"),
+        '*writeq_err*'(_A),
+        '*write_err*'("' occurs where a predicate or function is expected."),
+        '*nl_err*',
+        abort.
+call_handler(_A) :-
+        !,
+        '*write_err*'("*** Error: '"),
+        '*writeq_err*'(_A),
+        '*write_err*'("' is not a predicate or a function."),
+        '*nl_err*',
+        abort.
+
+nl :-
+        write("
+").
+
+\+ _A :-
+        _A,
+        !,
+        fail.
+\+ :-
+        succeed.
+
+non_strict(bagof)?
+bagof(_A,_B) -> _C:[] | evalin(_B), _C <<- [evalin(_A)|_C], fail ; true.
+
+reduce(@,_A,[]) -> _A.
+reduce(_A,_B,[_C|_D:@]) -> '*apply*'(_C,reduce(_A,_B,_D),'*functor*' => _A).
+
+map(@,[]) -> [].
+map(_A,[_B|_C:@]) -> ['*apply*'(_B,'*functor*' => _A)|map(_A,_C)].
+
+maprel(_A,[_B|_C:@]) :-
+        !,
+        rootsort(_A) : @(_B),
+        maprel(_A,_C).
+maprel(@,[]) :-
+        succeed.
+
+append([],_A:list) -> _A.
+append([_A|_B:@],_C:list) -> [_A|append(_B,_C)].
+
+length([]) -> 0.
+length([@|_A:@]) -> 1 + length(_A).
+
+% 'nil' is undefined.
+
+% 'cons' is undefined.
+
+% 'car' is undefined.
+
+% 'cdr' is undefined.
+
+% 'repeat' is a built-in predicate.
+
+where -> @.
+
+% 'and' is a built-in function.
+
+% 'or' is a built-in function.
+
+not(true) -> false.
+not(false) -> true.
+
+xor(true,false) -> true.
+xor(false,true) -> true.
+xor(bool,bool) -> false.
+
+% 'int2str' is a built-in function.
+
+% '*num*' is undefined.
+
+'*str*'(_A) -> cond(is_value(_A),'*strval*'(_A),psi2str(_A)).
+
+'*strval*'(_A:string) -> _A.
+'*strval*'(_A:int) -> int2str(_A).
+
+"" $== "" -> true.
+_A:string $== _B:string -> asc(_A) =:= asc(_B) and '*lenstreq*'(substr(_A,
+                                                                       2,
+                                                                       _C:strlen(_A)),
+                                                                substr(_B,
+                                                                       2,
+                                                                       _D:strlen(_B)),
+                                                                _C,
+                                                                _D).
+
+_A:string $\== _B:string -> not(_A $== _B).
+
+_A:string $< _B:string -> _A $=< _B and not(_A $== _B).
+
+"" $=< string -> true.
+string $=< "" -> false.
+_A:string $=< _B:string -> _C:asc(_A) < _D:asc(_B) or _C =:= _D and '*lenstrle*'(substr(_A,
+                                                                                        2,
+                                                                                        _E:strlen(_A)),
+                                                                                 substr(_B,
+                                                                                        2,
+                                                                                        _F:strlen(_B)),
+                                                                                 _E,
+                                                                                 _F).
+
+_A:string $> _B:string -> not(_A $=< _B).
+
+_A:string $>= _B:string -> not(_A $=< _B) or _A $== _B.
+
+% 'set' is undefined.
+
+% 'setq' is a built-in predicate.
+
+_A ^ _B:int -> cond(_B < 0,1 / '*pwr*'(_A,- _B),'*pwr*'(_A,_B)).
+
+'*pwr*'(@,0) -> 1.
+'*pwr*'(_A,_B) -> _A * '*pwr*'(_A,_B - 1).
+
+max(_A,_B) -> cond(_A > _B,_A,_B).
+
+min(_A,_B) -> cond(_A > _B,_B,_A).
+
+*** Yes
+> 

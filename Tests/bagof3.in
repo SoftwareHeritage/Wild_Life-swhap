@@ -1,0 +1,2 @@
+A=bagof(project(functor,X),X:op)?
+

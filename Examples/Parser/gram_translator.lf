@@ -1,0 +1,170 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             
+%                   TRANSLATING GRAMMARS INTO LIFE 
+%
+% This file contains an implementation of an extension of Definite Clause
+% Grammars, in which Psi-terms replace first order terms. 
+% 
+% The syntax of the rules, and the method to translate them into life code are
+% very close to the usual way to deal with Definite Clause Grammars in Prolog.
+%
+% SYNTAX
+% 
+% - terminals are enclosed in list brackets;
+% - non-terminals are represented by ordinary predicate symbols; they can be
+%   augmented with features, that will play the role of attributes of the
+%   non-terminal; no feature should be named 0 or 'rest' as those names
+%   are  used to translate a rule into life code;
+% - non-terminals may also be variables, provided that they eventually get
+%   instantiated to a predicate symbol or a list;
+% - the left and right-hand side of a rule are separated by the symbol '-->';
+% - symbols in the right-hand side of the rule are separated  by commas ;
+% - rules end with a question mark;
+% - the empty string is denoted by the empty list.
+% 
+% TRANSLATION INTO LIFE
+% 
+% Rules are translated into life clauses using difference lists.
+% 
+% ex: 
+%    a --> b, [foo], c ?
+% 
+% is tranlated into:
+% 
+% a(0 => _B, rest => _A) :-
+%         b(rest => [foo|_C:@],0 => _B),
+%         c(rest => _A,0 => _C).
+% 
+% The 0 and 'rest' features added to every non-terminal are a difference
+% list representing a sequence of words that derives from the non-terminal in
+% the language described by the grammar. 
+% 
+%      
+% Author: Bruno Dumant
+% 
+% This File is loaded automatically
+%                                                        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op( 1000, xfy, comma) ?
+op( 1200, xfy, -->) ?
+non_strict(-->) ?
+
+
+(Lhs --> Rhs) :- R = compileRule( Lhs, Rhs), assert(R), fail ; succeed.
+
+%
+% compileRule: translates the grammar rules into clauses
+%
+
+compileRule( Lhs, Rhs) -> 
+	(compileSymbols( Lhs, false, false, Xs, Ys, _) :- 
+	     compileSeq( Rhs, true,  false, Xs, Ys, _)).
+
+%
+% compileSeq is used to translate a sequence of symbols of the grammar into a
+% sequence of literals.
+%
+
+compileSeq( Symbols, FoldOk, InDisj, Xs, Ys, NewFoldOk) -> 
+	cond( Symbols :== @,
+	      `varSymbol( Symbols, 0 => Xs, rest => Ys) 
+	  | NewFoldOk = FoldOk,
+	      compileSymbols( Symbols, FoldOk, InDisj, Xs, Ys, NewFoldOk)).
+
+%
+% compileSymbols is used to translate non-variable symbols.
+%
+
+% conjunction
+  compileSymbols( ( Symb, Autres), FoldOk, InDisj, Xs, Ys, NewFoldOk) ->
+	compileSeq( Symb,   FoldOk,      InDisj, Xs, Ys1, InterFoldOk) comma 
+        compileSeq( Autres, InterFoldOk, InDisj, Ys1, Ys, NewFoldOk).
+
+% disjunction
+  compileSymbols( ( List1 ; List2), FoldOk, _, Xs, Ys, NewFoldOk) -> 
+	X | Z = compileSeq( List1, FoldOk, true, Xs, Ys, InterFoldOk1),
+            T = compileSeq( List2, FoldOk, true, Xs, Ys, InterFoldOk2),
+            NewFoldOk = InterFoldOk1 and InterFoldOk2,
+	    X = `( Z ; T ), 
+	    ! .
+                                   
+% terminals
+  compileSymbols( Terms: list, FoldOk, InDisj, Xs, Ys, NewFoldOk) -> 
+	'C'(Terms, Xs, Ys, FoldOk and not(InDisj)) |  NewFoldOk = FoldOk.
+
+% cut
+  compileSymbols( !, FoldOk, false, Xs, Ys, NewFoldOk) -> 
+	! | NewFoldOk = false, Xs = Ys.  
+  compileSymbols( !, FoldOk, true, Xs, Ys, NewFoldOk) -> 
+	Xs = Ys, ! | NewFoldOk = false.
+
+% insertion of code
+
+  compileSymbols( Term: #, FoldOk, false, Xs, Ys, NewFoldOk)  -> 
+	transLifeCode( Term) | Xs = Ys, NewFoldOk = false.
+  compileSymbols( Term: #, FoldOk, true, Xs, Ys, NewFoldOk)  -> 
+	Xs = Ys, transLifeCode( Term) | NewFoldOk = false.
+
+
+% non-terminals
+  compileSymbols(NonTerm, FoldOk, _, Xs, Ys, NewFoldOk)    -> 
+	NonTerm  | NonTerm = @( 0 => Xs, rest => Ys), NewFoldOk = FoldOk.
+
+
+%
+% Inserting Life code
+%
+
+transLifeCode( L) -> transList( feats(L)).
+
+feats(L) -> map( project( 2 => L), features(L)).
+
+transList( []) ->  succeed.
+transList( [A|B]) -> A comma transList( B).
+
+%
+% handling terminals
+%
+
+termSequence( [], Ys)     -> Ys.
+termSequence( [T|Ts], Ys) -> [T|termSequence( Ts, Ys)].
+
+%
+% This definition is used at run-time to evaluate variable symbols
+%
+
+varSymbol( X:list, 0 => Xs, rest => Ys) -> 
+	'C'(X,Xs,Ys).
+%%  Xs = termSequence( X, Ys). 
+
+varSymbol( X, 0 => Xs, rest => Ys) -> 
+	X | X = @( 0 => Xs, rest => Ys).
+
+
+%
+% getting rid of unnecessary succeed statements
+%
+
+succeed comma A -> A .
+A comma succeed -> A .
+A comma B -> A , B.
+
+%
+% handling terminals
+%
+
+termSequence( [], Ys)     -> Ys.
+termSequence( [T|Ts], Ys) -> [T|termSequence( Ts, Ys)].
+
+set_new_func_arg('C'(Terms,Xs,Ys,FoldOk), default_C(Terms,Xs,Ys,FoldOk)) ?
+
+default_C( Terms: list, Xs, Ys, true ) -> 
+	succeed | Xs = termSequence(Terms, Ys).
+default_C( Terms: list, Xs, Ys, false) -> 
+	Xs = termSequence(Terms, Ys).

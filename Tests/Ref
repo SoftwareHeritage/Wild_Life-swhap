@@ -1,0 +1,8 @@
+#! /bin/csh
+foreach i ($argv)
+          cp $i:r.out $i:r.ref 
+	  rm $i:r.diff
+	  touch $i:r.diff
+end
+
+echo ""

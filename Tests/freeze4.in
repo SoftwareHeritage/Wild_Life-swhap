@@ -1,0 +1,16 @@
+freeze(p(A)), A=1?
+
+freeze(p(A)), A=1, fail?
+freeze(p(A)), A={1;2;3}, fail?
+freeze(p(A))?
+A=1?
+A={1;2;3},fail?
+
+freeze(var(A))?
+freeze(A<B)?
+freeze(write(X))?
+w(A:int) :- write(A).
+freeze(w(A))?
+A=234?
+
+

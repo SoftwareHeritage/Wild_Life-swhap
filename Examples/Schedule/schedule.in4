@@ -1,0 +1,59 @@
+
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+
+% A dependency graph with large amounts of sharing:
+% This illustrates that the scheduler runs in linear time.  This is true
+% because each arithmetic operation is executed only once--it waits until
+% its argument becomes available and then does the operation.  This
+% pathological example is due to Herve' Touati.
+
+A1=activity(duration=>2, prerequisites=>[B1,C1]),
+B1=activity(duration=>2, prerequisites=>[A2]),
+C1=activity(duration=>2, prerequisites=>[A2]),
+
+A2=activity(duration=>2, prerequisites=>[B2,C2]),
+B2=activity(duration=>2, prerequisites=>[A3]),
+C2=activity(duration=>2, prerequisites=>[A3]),
+
+A3=activity(duration=>2, prerequisites=>[B3,C3]),
+B3=activity(duration=>2, prerequisites=>[A4]),
+C3=activity(duration=>2, prerequisites=>[A4]),
+
+A4=activity(duration=>2, prerequisites=>[B4,C4]),
+B4=activity(duration=>2, prerequisites=>[A5]),
+C4=activity(duration=>2, prerequisites=>[A5]),
+
+A5=activity(duration=>2, prerequisites=>[B5,C5]),
+B5=activity(duration=>2, prerequisites=>[A6]),
+C5=activity(duration=>2, prerequisites=>[A6]),
+
+A6=activity(duration=>2, prerequisites=>[B6,C6]),
+B6=activity(duration=>2, prerequisites=>[A7]),
+C6=activity(duration=>2, prerequisites=>[A7]),
+
+A7=activity(duration=>2, prerequisites=>[B7,C7]),
+B7=activity(duration=>2, prerequisites=>[A8]),
+C7=activity(duration=>2, prerequisites=>[A8]),
+
+A8=activity(duration=>2, prerequisites=>[B8,C8]),
+B8=activity(duration=>2, prerequisites=>[A9]),
+C8=activity(duration=>2, prerequisites=>[A9]),
+
+A9=activity(duration=>2, prerequisites=>[B9,C9]),
+B9=activity(duration=>2, prerequisites=>[A10]),
+C9=activity(duration=>2, prerequisites=>[A10]),
+
+A10=activity(duration=>2, prerequisites=>[B10,C10]),
+B10=activity(duration=>2, prerequisites=>[A11]),
+C10=activity(duration=>2, prerequisites=>[A11]),
+
+A11=activity(duration=>2, prerequisites=>[B11,C11]),
+B11=activity(duration=>2, prerequisites=>[A12]),
+C11=activity(duration=>2, prerequisites=>[A12]),
+
+A12=activity(duration=>2),
+
+visAllActs([A1,B1,C1,A2,B2,C2,A3,B3,C3,A4,B4,C4,A5,B5,C5,
+	    A6,B6,C6,A7,B7,C7,A8,B8,C9,A9,B9,C9,A10,B10,C10,
+	    A11,B11,C11,A12])?

@@ -1,0 +1,99 @@
+                                                     wild_life(1)
+
+NAME
+    wild_life - interpreter for the LIFE language
+
+DESCRIPTION
+    LIFE (Logic, Inheritance, Functions, Equations) is an experimental
+    programming language with a powerful facility for structured type
+    inheritance.  LIFE reconciles styles from Functional Programming and
+    Logic Programming by implicitly delegating control to an automatic
+    suspension mechanism.  This allows interleaving interpretation of
+    relational and functional expressions which specify structural
+    dependencies on objects.
+
+    The Wild_Life interpreter is a fully functional implementation of the
+    LIFE language.  It has a comfortable user interface with incremental
+    query extension ability.  It contains an extensive set of built-in
+    operations as well as an X Windows interface.
+
+FILES
+    Life/Documents (documentation)
+    Life/Examples (example programs)
+
+EXAMPLES
+    The directory Life/Examples contains a set of example programs.
+    These programs can be loaded directly into the interpreter with
+    the 'load' command.
+
+    The following example shows how to run a program that solves the
+    SEND+MORE=MONEY puzzle:
+
+        % wild_life
+        Wild_Life Interpreter Version 0.9 (Sun Oct 18 15:17:05 MET 1992)
+        Copyright (C) 1991-92 DEC Paris Research Laboratory
+        No customizing file loaded.
+        > load(solve)?
+        *** File "/_/vanroy/_/Life/Examples/solve.lf" loaded
+
+        *** Yes
+        > solve?
+        
+         SEND     9567
+        +MORE    +1085
+        -----    -----
+        MONEY    10652
+
+
+        *** No
+        > listing(solve)?
+        
+        solve :-
+                _A = 1,
+                _B + _C + _A = _D + 10 * _A,
+                _E + _F + _D = _G + 10 * _B,
+                _H + _G + _I = _F + 10 * _E,
+                _J + _F = _K + 10 * _H,
+                diff_list([_C,_F,_G,_J,_A,_D,_I,_K]),
+                _H = carry,
+                _E = carry,
+                _B = carry,
+                _C = decimal,
+                _F = decimal,
+                _G = decimal,
+                _J = decimal,
+                _D = decimal,
+                _I = decimal,
+                _K = decimal,
+                nl,
+                write(" SEND     ",_C,_F,_G,_J),
+                nl,
+                write("+MORE    +",_A,_D,_I,_F),
+                nl,
+                write("-----    -----"),
+                nl,
+                write("MONEY    ",_A,_D,_G,_F,_K),
+                nl,
+                nl,
+                fail.
+        
+        *** Yes
+        > halt?
+
+        *** Exiting Wild_Life  [2.200s cpu, 0.000s gc (0.0%)]
+        %
+
+BUGS
+    Various, mostly minor.  These are in the process of being fixed.
+
+CURRENT OWNER
+    vanroy@prl.dec.com (Peter Van Roy)
+    
+AUTHOR OF OBJECT
+    Peter Van Roy (current implementation)
+    Richard Meyer (original implementation)
+    Jean-Claude Herve (X Windows interface)
+    Hassan Ait-Kaci, Seth Copen Goldstein, Abder Aggoun (contributions)
+
+AUTHOR OF DOCUMENTATION
+    Hassan Ait-Kaci, Richard Meyer, Peter Van Roy

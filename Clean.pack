@@ -1,0 +1,9 @@
+#! /bin/csh
+
+# Copyright 1992 Digital Equipment Corporation
+# All Rights Reserved
+
+# /bin/rm *.o wild_life wild_life.old Life.* .set_up
+# touch wild_life wild_life.old
+chmod a+x wild_life wild_life.old
+cp Makefile.pack Makefile

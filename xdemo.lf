@@ -1,0 +1,72 @@
+% a simple demo of X predicates
+
+
+xHandleEvent (Window, E: mouse_button (button=>B, x=>X, y=>Y)) 
+	-> true | 
+	   xButton (Button, B),
+	   write ("mouse button event - button ", Button,
+	          " at (", X, ",", Y, ")"), nl.
+
+xHandleEvent (Window, E: keyboard_event (keycode=>K, char=>C)) 
+	-> true | 
+	   write ("keyboard event - key ", K, " ", chr(C)), nl.
+
+xHandleEvent (Window, E: expose_event) 
+	-> true | 
+	   write ("expose event"), nl, 
+	   xRefreshWindow (Window).
+
+xHandleEvent (Window, E: destroy_event) 
+	-> false | 
+	   write ("destroy event"), nl.
+
+xHandleEvent (Window, E: null_event) 
+	-> true | 
+	   write ("null event"), nl.
+
+
+xEachEvent (Window, true) 
+	-> true | 
+	   xEachEvent (Window, 
+		       xHandleEvent (Window, 
+				     xGetEvent (Window, 
+	                                        eventmask=> xExposureMask
+                                                   	 \/ xKeyPressMask
+                                                         \/ xButtonPressMask
+							 \/ xSubstructureNotifyMask))).
+
+xEachEvent (Window, false) -> true.
+
+
+xdemo (Display, Window) 
+	:-
+	  xOpenConnection (Display),
+	  xCreateWindow (Display, 0, 0, 900, 300, windowtitle=>"xdemo", 
+			 eventmask=>xExposureMask
+                                 \/ xKeyPressMask
+                                 \/ xButtonPressMask
+				 \/ xSubstructureNotifyMask, Window),
+	  xRequestNamedColor (Window, "Tan", Tan),
+          xSetWindowColor (Window, Tan),
+	  xShowWindow (Window),
+	  xRequestNamedColor (Window, "red", Red),
+	  xDrawOval (Window, 100, 50, 500, 200, linewidth=>10, color=>Red),
+	  xRequestNamedColor (Window, "goldenrod", Goldenrod),
+	  xFillOval (Window, 100, 100, 100, 100, color=>Goldenrod),
+	  xRequestNamedColor (Window, "cyan", Cyan),
+	  xDrawLine (Window, 0, 0, 200, 100, linewidth=>5, color=>Cyan),
+	  xDrawArc (Window, 0, 100, 400, 100, 0, 90, linewidth=>5, color=>Cyan),
+	  xRequestNamedColor (Window, "turquoise", Turquoise),
+	  xFillRectangle (Window, 780, 200, 100, 75, color=>Turquoise),
+	  xRequestNamedColor (Window, "dark turquoise", DarkTurquoise),
+	  xDrawRectangle (Window, 780, 200, 100, 75, linewidth=>7, color=>DarkTurquoise),
+	  xLoadFont (Display, Font, "fgi1-25"),
+	  xRequestNamedColor (Window, "spring green", SpringGreen),
+	  xDrawString (Window, 415, 150, "Welcome X in Life !", font=>Font, color=>SpringGreen),
+	  xLoadFont (Display, ChessFont, "chs-s50"),
+	  xDrawString (Window, 640, 105, "b", font=>ChessFont, color=>SpringGreen),
+	  xFillPolygon (Window, [(200,100), (100,300), (300,300)],
+		        color=>Turquoise),
+	  xEachEvent (Window, true)
+	  .
+

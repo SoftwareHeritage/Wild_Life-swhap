@@ -1,0 +1,2 @@
+freeze(A<B)?
+freeze(A=B)?

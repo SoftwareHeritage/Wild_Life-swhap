@@ -1,0 +1,16 @@
+substitute([a,b,b,a,a,a,b,a,b,b,a],[a,b],[c,d],S)?
+;
+;
+;
+substitute([a,b,c],X,[d,e],Y)?
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+

@@ -1,0 +1,48 @@
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+
+% FILE. . . . . /_/hassan/_/life/happy.life
+% EDIT BY . . . Hassan Ait-Kaci
+% ON MACHINE. . Prl316
+% STARTED ON. . Thu Jan 30 12:56:40 1992
+
+%	peter, paul and mary are students, and students are people.
+
+student := {peter;paul;mary}.
+student <| person.
+
+
+%	grades are either goodgrades or badgrades.  
+% 	a and b are goodgrades, while c, d and f are badgrades.
+
+grade := {goodgrade;badgrade}.
+goodgrade := {a;b}.
+badgrade := {c;d;f}.
+
+
+%	Goodgrades are goodthings
+
+goodgrade <| goodthing.
+
+
+%	Every person likes themself.
+%	Every person likes goodthings.
+%	peter likes mary.
+
+likes(X:person,X).
+likes(person,goodthing).
+likes(peter,mary).
+
+
+%	peter got a c, paul an f and mary an a.
+
+got(peter,c).
+got(paul,f).
+got(mary,a).
+
+
+%	A person is happy if they got something that they like, or,
+%	if they like someone who got a goodthing.
+
+happy(X:person) :- got(X,Y),likes(X,Y).
+happy(X:person) :- likes(X,Y),got(Y,goodthing).

@@ -1,0 +1,24 @@
+
+nl,nl,write("*** TESTING THE TOKENIZER ***") ?
+
+nl,write(prove(number(V,0 =>[51,52,50,46,56,57,48],rest=>[]))) ?
+
+nl,write((prove( non_quoted_atom(V,0 =>[116,
+     111,
+     116,
+     111],rest=>[]))))?
+
+nl,write((prove( variable(V, 0 =>[95,
+     82,
+     101,
+     55,
+     56,
+     57],rest=>[]))))?
+
+nl,write(prove(tokenize("preparser.1",L))), nl, pretty_write(L) ?
+
+nl,nl, write("*** TESTING THE EXPRESSIONS  ***") ?
+
+nl,tokenize("preparser.2",L), 
+write(prove(list_express( 0 => L, list => List, rest => []))),
+nl,pretty_write(List), nl,nl ?

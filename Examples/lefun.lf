@@ -1,0 +1,48 @@
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+
+% FILE. . . . . /_/hassan/_/life/ok/lefun.life
+% EDIT BY . . . Hassan Ait-Kaci
+% ON MACHINE. . Prl316
+% STARTED ON. . Tue Mar 10 16:25:10 1992
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+p(X, Y, Z) :-
+	q(X, Y, Z, Z),
+	r(X, Y).
+
+q(X, Y, X+Y, X*Y).
+q(X, Y, X+Y, (X*Y)-14).
+
+r(3, 5).
+r(2, 2).
+r(4, 6).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+inc_list(N:int, L:list, map(+(2=>N),L)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fun(V) :-
+    V = G(2=>1),
+    G = F(X),
+    valid(F),
+    pick(X),
+    unit(sq(V)).
+
+
+sq(X) -> X*X.
+
+twice(F,X) -> F(F(X)).
+
+valid(twice).
+
+unit(1).
+
+id(X) -> X.
+
+pick(id).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

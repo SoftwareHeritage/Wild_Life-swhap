@@ -1,0 +1,12 @@
+count :-
+        N=0,
+	repeat,
+        write('What was ',N),
+        N <<- N+1,
+        write(' becomes ',N),
+        N=@(abc,def,N-7,N*5),
+        write(' then ',N),
+        nl,
+        N>30.
+
+

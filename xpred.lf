@@ -1,0 +1,281 @@
+% Copyright 1992 Digital Equipment Corporation.
+% Distributed only by permission.
+%
+% Last modified on Tue Oct  6 17:55:12 MET 1992 by herve
+%
+% X predicates for Life
+%
+
+% default values in the X predicates
+
+xDefaultScreen->"".
+xDefaultName->"Life".
+xDefaultBackground->xWhite.
+xDefaultBorderWidth->20.
+xDefaultBorderColor->xWhite.
+xDefaultDepth->0.
+xDefaultClass->1.
+xDefaultVisual->0.
+xDefaultFunction->xCopy.
+xDefaultColor->xBlack.
+xDefaultLineWidth->xThinLine.
+xDefaultFontName->"9x15".
+xDefaultFont-> -1.
+xDefaultEventMask->xKeyPressMask\/xButtonPressMask\/xExposureMask.
+xDefaultPsFilename->"X.ps".
+
+
+% hierarchy of events 
+
+null_event <| event.
+input_event <| event.
+expose_event <| event.
+destroy_event <| event.
+other_event <| event.
+
+mouse_event <| input_event.
+keyboard_event <| input_event.
+
+window <| drawable.
+pixmap <| drawable.
+
+% X predicates
+
+xOpenConnection (Display:@(id=>D), Screen:{xDefaultScreen;string}) :- !,
+	xcOpenConnection (Screen, Display),
+	BlackPixel = xGetScreenBlackPixel (D, xGetConnectionDefaultScreen (D)),
+	WhitePixel = xGetScreenWhitePixel (D, xGetConnectionDefaultScreen (D)),
+	setq (xBlack, BlackPixel),
+	setq (xWhite, WhitePixel),
+	pause(0.5).
+
+
+xDefaultRootWindow (Display:@(id=>D), Root) :-
+	xcDefaultRootWindow (D,Root).
+
+
+xCloseConnection (Display:@(display=>D)) :-
+	xcCloseConnection (D).
+
+
+xCreateWindow (Display:@(id=>D), X0, Y0, Width, Height, 
+               color=>Color:{xDefaultBackground;int},
+	       windowtitle=>WindowTitle:{xDefaultName;string},
+	       icontitle=>IconTitle:{WindowTitle;string},
+	       eventmask=>EventMask:{xDefaultEventMask;int},
+	       permanent=>Permanent:{false;bool},
+	       show=>Show:{true;bool},
+	       Window) :- !,
+	xcDefaultRootWindow (D, Root:@(id=>R)),
+	xcCreateSimpleWindow (D, R, X0, Y0, Width, Height, 
+			      Color, WindowTitle, IconTitle, 
+			      Permanent, Show, 
+			      Window:@(id=>W)),
+	pause (0.75),
+%	xSetWindowBackingStore (W, xAlways),
+%	xSetWindowSaveUnder (W, xTrue),
+	xcSelectInput (D, W, EventMask),
+	Window = @(display=>Display, permanent=>Permanent)
+%	xSetWindowBackPixel (Window, Color)
+	.
+
+
+xShowWindow (Window:@(display=>display(id=>D), id=>W)) :- 
+	xcMapWindow (D, W).
+
+
+xHideWindow (Window:@(display=>display(id=>D), id=>W)) :- 
+	xcUnmapWindow (D, W).
+
+
+xRefreshWindow (Window:@(display=>display(id=>D))) :- 
+ 	xcRefreshWindow (D, Window).
+
+
+xPostScriptWindow (Window:@(display=>display(id=>D)),
+	           Filename:{xDefaultPsFilename;string}) :- !,
+ 	xcPostScriptWindow (D, Window, Filename).
+
+
+xGetWindowGeometry (Window:@(display=>display(id=>D)), 
+		    X0, Y0, Width, Height) :- 
+	xcGetWindowGeometry (D, Window, X0, Y0, Width, Height).
+
+
+xSetWindowGeometry (Window:@(display=>display(id=>D)), 
+		    X0, Y0, Width, Height) :- 
+	xcSetWindowGeometry (D, Window, X0, Y0, Width, Height).
+
+
+xSetWindowColor (Window, Color) :- 
+ 	xSetWindowBackPixel (Window, Color).
+
+
+xDestroyWindow (Window:@(display=>display(id=>D))) :- 
+ 	xcDestroyWindow (D, Window).
+
+
+xRequestColor (Window:@(display=>display(id=>D)), 
+	       Red, Green, Blue, Color) :- 
+ 	ColorMap = xGetWindowColormap (Window),
+	xcRequestColor (D, ColorMap, Red, Green, Blue, Color).
+
+
+xRequestNamedColor (Window:@(display=>display(id=>D)), 
+		    Name, Color) :- 
+ 	ColorMap = xGetWindowColormap (Window),
+	xcRequestNamedColor (D, ColorMap, Name, Color).
+
+
+xFreeColor (Window:@(display=>display(id=>D)), 
+	    Color) :-
+ 	ColorMap = xGetWindowColormap (Window),
+	xcFreeColor (D, ColorMap, Color).
+
+
+xDrawLine (Window:@(display=>display(id=>D)), 
+	   X0, Y0, X1, Y1, 
+	   function=>Function:{xDefaultFunction; int}, 
+	   color=>Color:{xDefaultColor; int}, 
+	   linewidth=>LineWidth:{xDefaultLineWidth; real}) 
+	:- !,
+ 	xcDrawLine (D, Window, X0, Y0, X1, Y1, 
+	            Function, Color, LineWidth).
+
+
+xDrawRectangle (Window:@(display=>display(id=>D)), 
+	        X0, Y0, Width, Height, 
+	        function=>Function:{xDefaultFunction; int}, 
+	        color=>Color:{xDefaultColor; int}, 
+	        linewidth=>LineWidth:{xDefaultLineWidth; real}) 
+	:- !,
+ 	xcDrawRectangle (D, Window, X0, Y0, Width, Height, 
+			 Function, Color, LineWidth).
+
+
+xDrawArc (Window:@(display=>display(id=>D)), 
+          X0, Y0, Width, Height, StartAngle, ArcAngle,
+	  function=>Function:{xDefaultFunction; int}, 
+	  color=>Color:{xDefaultColor; int}, 
+	  linewidth=>LineWidth:{xDefaultLineWidth; real}) 
+	:- !,
+ 	xcDrawArc (D, Window, X0, Y0, Width, Height,
+		   StartAngle*64, ArcAngle*64,
+		   Function, Color, LineWidth).
+
+
+xDrawOval (Window, X0, Y0, Width, Height,
+	   function=>Function:{xDefaultFunction; int}, 
+	   color=>Color:{xDefaultColor; int}, 
+	   linewidth=>LineWidth:{xDefaultLineWidth; real}) 
+	:- !,
+	xDrawArc (Window, X0, Y0, Width, Height, 0, 360,
+	          function=>Function, color=>Color, 
+		  linewidth=>LineWidth).
+
+
+xPointsPut (Polygon, N, []).
+xPointsPut (Polygon, N, [(X,Y) | L]) 
+	:-
+	xcCoordPut (Polygon, N, X), 
+	xcCoordPut (Polygon, N+1, Y),
+	xPointsPut (Polygon, N+2, L).
+
+
+xDrawPolygon (Window:@(display=>display(id=>D)), 
+	      PointList,
+	      function=>Function:{xDefaultFunction; int}, 
+	      color=>Color:{xDefaultColor; int},
+ 	      linewidth=>LineWidth:{xDefaultLineWidth; real})
+	:- !,
+	xcPointsAlloc (L:length (PointList), Polygon),
+ 	xPointsPut (Polygon, 0, PointList),
+ 	xcDrawPolygon (D, Window, Polygon, L, Function, Color, LineWidth),
+	xcPointsFree (Polygon).
+
+
+xFillRectangle (Window:@(display=>display(id=>D)), 
+	        X0, Y0, Width, Height, 
+	        function=>Function:{xDefaultFunction; int}, 
+	        color=>Color:{xDefaultColor; int}) 
+	:- !,
+	xcFillRectangle (D, Window, X0, Y0, Width, Height,
+		  	 Function, Color).
+
+
+xFillArc (Window:@(display=>display(id=>D)), 
+	  X0, Y0, Width, Height, 
+	  StartAngle, ArcAngle, % given in degrees
+	  function=>Function:{xDefaultFunction; int}, 
+	  color=>Color:{xDefaultColor; int}) 
+	:- !,
+	xcFillArc (D, Window, X0, Y0, Width, Height,
+		   StartAngle*64, ArcAngle*64,
+		   Function, Color).
+
+
+xFillOval (Window, X0, Y0, Width, Height,
+	   function=>Function:{xDefaultFunction; int}, 
+	   color=>Color:{xDefaultColor; int}) 
+	:- !,
+	xFillArc (Window, X0, Y0, Width, Height, 0, 360,
+	          function=>Function, color=>Color).
+
+
+xFillPolygon (Window:@(display=>display(id=>D)), 
+	      PointList,
+	      function=>Function:{xDefaultFunction; int}, 
+	      color=>Color:{xDefaultColor; int}) 
+	:- !,
+	xcPointsAlloc (L:length (PointList), Polygon),
+ 	xPointsPut (Polygon, 0, PointList),
+ 	xcFillPolygon (D, Window, Polygon, L, Function, Color),
+	xcPointsFree (Polygon).
+
+
+xLoadFont (Display:@(id=>D), 
+	   Font, 
+	   FontName:{xDefaultFontName; string}) 
+	:- !,
+ 	xcLoadFont (D, FontName, Font).
+
+
+xUnloadFont (Display:@(id=>D), 
+	     Font)
+	:- !,
+	xcUnloadFont (D, Font).
+
+
+xDrawString (Window:@(display=>display(id=>D)), 
+	     X0, Y0, String, 
+  	     font=>Font:{xDefaultFont; int},
+	     function=>Function:{xDefaultFunction; int}, 
+ 	     color=>Color:{xDefaultColor; int}) 
+	:- !,
+	xcDrawString (D, Window, X0, Y0, String, 
+		      Font, Function, Color).
+
+
+xDrawImageString (Window:@(display=>display(id=>D)), 
+		  X0, Y0, String, 
+	          font=>Font:{xDefaultFont; int},
+	   	  function=>Function:{xDefaultFunction; int}, 
+ 	   	  color=>Color:{xDefaultColor; int}) 
+	:- !,
+	xcDrawImageString (D, Window, X0, Y0, String,
+		  	   Font, Function, Color).
+
+
+xGetEvent (Window:@(display=>display(id=>D)), 
+	   eventmask=>EventMask) 
+	-> 
+	xcGetEvent (D, Window, EventMask) 
+	| 
+	EventMask = {xDefaultEventMask;int}, !.
+
+
+xFlushEvents (Window:@(display=>display(id=>D)), 
+ 	      eventmask=>EventMask:{xDefaultEventMask;int}) 
+	:- !,
+	xcFlushEvents (D, Window, EventMask).
+

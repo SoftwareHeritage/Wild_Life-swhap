@@ -1,0 +1,62 @@
+> 
+*** Yes
+> > 2 :<= @~
+2 :<= real~
+2 :<= int~
+
+*** No
+> int :<= @~
+int :<= real~
+int :<= int~
+
+*** No
+> 3.2 :<= @~
+3.2 :<= real~
+
+*** No
+> string :<= @~
+
+*** No
+> 1 :<= @~
+1 :<= real~
+
+*** No
+> 4 :<= @~
+4 :<= real~
+
+*** No
+> terminal :<= file~
+stage one
+terminal :<= seqFile~
+stage two
+terminal :<= seqWriteFile~
+stage three
+terminal :<= terminal~
+***********
+terminal :<= readFile~
+stage two
+terminal :<= terminal~
+stage three
+terminal :<= writeFile~
+stage two
+terminal :<= seqWriteFile~
+stage three
+terminal :<= terminal~
+***********
+
+*** No
+> seqFile :<= file~
+stage one
+seqFile :<= seqFile~
+stage two
+
+*** No
+> mouse_event :<= event~
+stage one
+mouse_event :<= input_event~
+stage two
+mouse_event :<= mouse_event~
+stage three
+
+*** No
+> > 

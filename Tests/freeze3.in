@@ -1,0 +1,17 @@
+freeze(p(A,B))?
+B=bb?
+A=a?
+A=b?
+
+
+A=a?
+
+A=B?
+A=a?
+A=b?
+A=c?
+
+A={a;b}?
+;
+;
+;

@@ -1,0 +1,713 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             
+%                             A PARSER FOR LIFE            
+%
+%  This file contains a complete parser for Life that includes extensions to
+%  the standard syntax of Life (the standard syntax being that defined by the
+%  wild_life parser), and the possibility to use local functions.
+%
+%  It is written like an attribute grammar, and translated to a Life program by
+%  the grammar translator (file gram_translator.lf) The inputs of this grammar
+%  are the tokens produced by the tokenizer in Life (file tokenizer.lf). This
+%  grammar needs to know one token in advance to work.
+%
+%  The extensions of the standard syntax are the following:
+%  - Expressions may be used at label places:
+%     foo( expr => bar ) 
+%           where expr is any life expression is syntactic sugar for:
+%     ( X:foo | project(expr,X) = bar )
+%
+%  - expr[foo] is syntactic sugar for project(expr,foo)
+%
+%  Local Functions:
+%  - lambda(attributes)(expr) defines a local function where all the
+%    variables appearing in attributes are local to the expression. This works
+%    also with recursive functions. For instance, factorial could be defined
+%    by :
+%    Fact = lambda(X)(cond(X =:= 0, 1, X*Fact(X-1))) ?
+%  - The possible syntaxes for application are the following:
+%    - X(args) 
+%        where X is a variable that has to be instantiated to a function
+%        (local or not) at runtime, and args the list of arguments of the
+%        function. 
+%    - (expr)(args) 
+%  - let X = expr in expr2 
+%      is syntactic sugar for 
+%      (lambda(X)(expr2))(expr)
+%
+%
+%  Use of this file:
+%      syntax(Filename) ? 
+%  parses the file Filename and writes the obtained psi-terms in the file
+%  Filename_expr. 
+%    
+%  All the necessary files are automatically loaded.
+%
+%
+%  Author: Bruno Dumant
+%   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%% load the tokenizer
+
+load("Parser/tokenizer") ?
+
+
+%%% set the right function for handling terminals in the grammar.
+
+set_func_arg('C'(Terms,Xs,Ys,FoldOk), parser_C(Terms,Xs,Ys)) ?
+
+parser_C([],Xs,Xs) :- !.
+parser_C([A],[A|D],T) :- 
+	evalin(D) = T.
+
+%%% operator declaration 
+
+op(1000,xfy,virgule) ?    
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  A GRAMMAR FOR LIFE
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Terms
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% The first feature of a non-terminal is the term that corresponds to it;
+%%% vars designate the environment of the expression
+%%% cons is a boolean that tells whether the expression is a simple constructor
+%%%      or not.
+
+term( T, vars => Vars, cons => Cons) --> 
+
+	%%% The token encountered is a constructor
+
+	[C:construct(Term)],!,  
+	(
+	    %%% Lambda expressions
+ 
+	    #( Term :== lambda , !),
+	    attributes( InScopeTerm, Conds, _, vars => LVars),
+	    expr( T1, vars => LVars&@(ContextVars), max => 0),
+	    #(  
+	         Args = features(InScopeTerm),
+	         T = lambda(expr => T1, env => ContextVars,
+	                  args => Args)&InScopeTerm, 
+	         Cons = false,
+	         put_in_context(ContextVars, Vars)
+	     )
+	;
+	    %%% let ...
+
+	    #( Term :== let , !),
+	    [variable(X)],
+	    #( get_variable(X,Var,LVars)),
+	    [atom(=)],
+	    expr( T1, vars => Vars, max => 1200),
+	    [atom(in)],
+	    expr( T2, vars => LVars&@(ContextVars), max => 0),
+	    #( 
+	         T3 = lambda(Var, expr => T2, env => ContextVars,
+	                     args => [1]), 
+                 T = `'*meta_apply*'(T3,@(T1)),
+	         Cons = false,
+	         put_in_context(ContextVars, Vars)
+	     )
+	        
+	;
+            %%% term with attributes
+
+	    attributes(Term, Conds, AuxTerm,
+	               vars => Vars ),
+	    #( 
+	         (
+		     Conds :== succeed, !,
+		     T = Term
+		 ;
+	             T = `( Term |(Conds, AuxTerm = Term) )
+		 ),
+		 Cons = false
+	     )
+	;
+            %%% Syntactic sugar for project
+
+	    ["["],
+	    expr( T1,   
+	          vars => Vars,  max => 1200),
+	    ["]"],
+	    #( T = `project(Term,T1), Cons = false)
+	; 
+	    %%% no attributes
+
+	    [], #( T = Term, Cons = true)
+	), 
+	! ?
+
+term( T, vars => Vars, cons => false) --> 
+
+	%%% The token encountered is a variable
+
+	[variable(V)],!,
+	#( get_variable(V,Var,Vars)),   %%% keeping track of the environment 
+	                                %%% of an expression
+	( 
+	    %%% there are attributes (application)
+
+	    attributes(Term, Conds, AuxTerm, 
+	                 vars => Vars ),
+	    !,
+	    #( 
+	       (
+	           Conds :== succeed, !,
+		   T = `'*meta_apply*'(Var, Term)
+	       ;
+	           T = `( R | (Conds, Term = AuxTerm,
+		               R = '*meta_apply*'(Var,Term )))
+	       ))
+	; 
+	    %%% no attributes
+
+	    [], #( T = Var)
+	) ?
+
+
+term( T, vars => Vars, cons => false) --> 
+       
+        %%% The term is a list
+
+	liste(X,   vars => Vars ),!,
+	( 
+	    attributes(X, Conds, X,
+	                 vars => Vars ),
+	    #( (
+	           Conds :== succeed, !,
+		   T = X
+	       ;
+	           T = `( X | Conds)
+	       ))
+	; 
+	    [], #( T = X)
+	), 
+	! ?
+term( T, vars => Vars, cons => false) --> 
+
+	%%% The term is a disjunction
+
+	disjunction(X,   vars => Vars ),  
+	( 
+	    attributes(X, Conds, X, 
+	                 vars => Vars ),
+	    #( (
+	           Conds :== succeed, !,
+		   T = X
+	       ;
+	           T = `(X |Conds)
+	       ))
+	; 
+	    [], #( T = X)
+	), 
+	! ?
+
+%%%
+%%% Attributes
+%%%
+%%%
+
+%%% Term is a reference to the root that bears the attributes;
+%%% CondOut is a conjunction of terms like " project(expr1,AuxTerm) = expr2 "
+%%% AuxTerm is unified with Term once the projections are performed.
+
+attributes( Term, CondOut, AuxTerm, vars => Vars ) --> 
+	["("], 
+	list_attributes( Term, AuxTerm, vars => Vars,
+	                 succeed, CondOut, oldnb => 1) ?
+
+
+%%% oldnb and newnb are used for numerical attributes
+
+list_attributes( Term, AuxTerm, vars => Vars,
+	         CondIn, CondOut, oldnb => ON, newnb => NN ) -->  
+	attribute( Term, AuxTerm, vars => Vars,
+	           CondIn, CondInt, oldnb => ON , newnb => NN1),
+        (
+	    [")"] , !, #( CondOut = CondInt)
+	;
+	    [atom(`,)], 
+	    list_attributes( Term, AuxTerm, vars => Vars, 
+	                     CondInt, CondOut, oldnb => NN1, newnb => NN)
+	) ?
+
+attribute( Term, AuxTerm, vars => Vars,
+	   CondIn, CondOut, oldnb => ON , newnb => NN) --> 
+	expr( X, vars => Vars , cons => Cons, 
+	      comma => false),
+	(
+	    [atom(=>)],!,
+	    expr( Y, vars => Vars, comma => false),
+	    #( (
+	           Cons,!,
+		   project(X,Term) = Y,
+		   CondIn = CondOut
+	       ;
+	           CondOut = ((project(X,AuxTerm) = Y) virgule CondIn)
+	       ), 
+	       NN = ON)
+	;
+	    #( project(ON,`Term) = X, NN=ON+1, CondIn = CondOut)
+	)?
+
+%%%
+%%% Lists
+%%%
+
+liste(L, vars => Vars )    --> 
+	["["],
+	( 
+	    ["]"], !, #(L =[]) 
+	; 
+	    end_list(L, vars => Vars )
+	) ?
+end_list([A|B], vars => Vars ) --> 
+	expr( A, vars => Vars,
+	      comma => false, bar => false),
+	(
+	    ["]"],!, #(B =[])
+	;
+	    [atom(`,)],!, 
+	    end_list(B,  vars => Vars )
+	;
+	    [atom(`|)], 
+	    expr( B,
+	           vars => Vars ),
+	    ["]"]
+	) ?
+
+%%%
+%%% disjunctions
+%%%
+
+disjunction(L, vars => Vars ) --> 
+	["{"],
+	( 
+	    ["}"], !, #(L =`{} ) 
+	; 
+	    end_disjunction(L, vars => Vars )
+	) ?
+end_disjunction(D,  vars => Vars ) --> 
+	expr( A, scolon => false, vars => Vars ),
+	(
+	    ["}"],!, #( D = A )
+	;
+	    [atom(`;)], !, 
+	    end_disjunction(B, vars => Vars  ), 
+	    #(D = `{A;B})
+	) ?
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% expressions
+%
+% expressions accept dynamically defined operators. The parse tree is obtained
+% by reading the list of tokens once, from left to right.
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% the max feature is the maximum possible precedence of the expression;
+%%% the tree feature is the syntactic tree of the expression: a psi term;
+%%% comma, scolon, bar indicate whether commas, semicolons, and | may be
+%%% considered as operators or just as syntactic objects, in the context of
+%%% the expression.
+
+expr( Tree, cons => Bool, vars => Vars,
+      comma => C, scolon => SC, bar => B, max => Max )    -->
+	start_expr( max => Max,  T, 
+	            comma => C, scolon => SC, bar => B,
+		    vars => Vars , 
+		    cons => Bool1),
+	end_expr( max => Max, left_expr => T,  Tree,
+	          comma => C, scolon => SC, bar => B,
+		  vars => Vars, 
+		  cons => Bool2),
+       #( Bool = Bool1 and Bool2 )?
+
+
+start_expr( Tree, cons => false, vars => Vars) --> 
+	["("], !, 
+	expr( Tree1, vars => Vars, max => 1200) , 
+	[")"],
+	( 
+	    attributes(Term, Conds, AuxTerm, vars => Vars ),
+	    !,
+	    #( 
+	       (
+	           Conds :== succeed, !,
+		   Tree = `'*meta_apply*'(Tree1, Term)
+	       ;
+	           Tree = `( R | (Conds, Term = AuxTerm,
+		                 R = '*meta_apply*'(Tree1,Term )))
+	       ))
+	; 
+	    #( Tree = Tree1)
+	) ?
+	
+	    
+start_expr( Tree, cons => Cons,
+            comma => C, scolon => SC, bar => B,
+	    vars => Vars ) -->
+	oper( prefix, M, Operator, right_strict => S,
+	      comma => C, scolon => SC, bar => B, max => 1200),
+	(
+	    %%% the operator is followed by an expression
+  
+	    expr( max => preced(S,M),  T,          
+	          comma => C, scolon => SC, bar => B,
+	           vars => Vars ),
+	    !,
+	    #( Tree = Operator,
+	       project(1,`Tree) = `T,
+	       Cons = false)
+	;
+	    %%% the operator is considered as a constructor
+   
+	    #( Tree  = Operator),
+	    ( 
+		attributes(Tree, 
+		            vars => Vars ),
+		#( Cons = false)
+	    ; 
+	        [], #( Cons = true)
+	    ),
+	    !
+	) ?
+start_expr( T, vars => Vars, cons => Cons) --> 
+	term( T, vars => Vars, cons => Cons) ?
+
+
+end_expr( T, cons => false, vars => Vars,
+          left_expr => L, left_prec => MLeft, max => Max,
+          comma => C, scolon => SC, bar => B )  --> 
+	sub_expr( T1, vars => Vars, 
+                  left_expr => L, left_prec => MLeft, prec => M, max => Max,
+                  comma => C, scolon => SC, bar => B),!,
+	end_expr( T, vars => Vars,
+	          left_expr => T1, prec => M, max => Max, 
+                  comma => C, scolon => SC, bar => B) ?
+
+end_expr( T, cons => true, left_expr => T) --> 
+	[] ?
+
+sub_expr( Tree, vars => Vars ,
+          left_expr => L, left_prec => MLeft, prec => N,  max => Max, 
+          comma => C, scolon => SC, bar => B) --> 
+	#( Mleft =< preced(LS,M)),
+	oper( Type, M, Operator,
+	      left_strict => LS, right_strict => RS,
+	      prefix => false, max => Max,
+	      comma => C, scolon => SC, bar => B),
+	(
+	    #( Type = postfix,!,
+	       Tree = Operator,
+	       project(1,`Tree) = `L,
+	       N = 0)
+	;
+	    #( Type = infix),
+	    expr( R, vars => Vars, max => preced(RS,M), 
+	          comma => C, scolon => SC, bar => B),
+	    #( 
+	        (
+		    Operator :== `:,!,
+		    ( 
+			L  :== @,
+			Tree = ( L&`(R)), !
+		    ;
+		        Tree = `(&),
+			project(1,`Tree) = L,
+			project(2,`Tree) = R
+		    )
+		;
+		    Tree = Operator,
+		    project(1,`Tree) = L,
+		    project(2,`Tree) = R
+		),
+		N = M
+	     )
+	) ?
+
+%
+% operators: any Life operator may be used. The value of the comma feature is
+% either @ or false. If it is false, "," should not be considered as an
+% operator (It is the case in lists or feature lists). scolon has the same
+% behaviour for semicolons, and bar for | in lists.
+%
+
+
+oper( infix, 1000,X, 
+      comma => C, left_strict => true, right_strict => false,
+      0 => [atom(X: `,)|Next], rest => Rest, max => Max) :- 
+	!,
+	Max >= 1000,
+	cond( C :== false, 
+              fail,
+              Rest = evalin(Next)).
+oper( infix, 1100,X, 
+      scolon => SC, left_strict => true,right_strict => false,
+      0 => [atom(X: `;)|Next], rest => Rest, max => Max) :- 
+	!,
+	Max >= 1100,
+	cond( SC :== false, 
+              fail,
+              Rest = evalin(Next)).
+oper( infix, 1150,X, 
+      bar => B, left_strict => true,right_strict => true,
+      0 => [atom(X: `|)|Next], rest => Rest, max => Max) :- 
+	!,
+	Max >= 1150,
+	cond( B :== false, 
+              fail,
+              Rest = evalin(Next)).
+
+%%% '*ops*' is dynamic list of all declared operators
+
+oper( Type, P, Operator,
+      left_strict => LS, right_strict => RS, prefix => Bool,
+      0 => [C:atom(Operator)|Next], rest => Rest, max => Max) :- 
+	op_member('*ops*', P, T, Operator ),
+	Max >= P,
+	cond( T :== xfx,
+	( LS = true, RS = true, Type = infix),
+	cond( T :== xfy,
+	( LS = true, RS = false,  Type = infix),	     
+	cond( T :== yfx,
+	( LS = false,  RS = true, Type = infix),
+	cond( T :== fx,
+	( RS = true,  cond ( Bool :== false, fail, Type  = prefix)),
+	cond( T :== fy,
+	( RS = false, cond ( Bool :== false, fail, Type  = prefix)), 
+	cond( T :== xf,
+	( LS = true,  Type = postfix),
+	cond( T :== yf,
+	( LS = false, Type = postfix)))))))),
+	Rest = evalin(Next).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Some Utilities
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+preced(true,M) -> M-1.
+preced(false,M) -> M.
+
+op_member([op(P1,T1,Oper)|OOps],Precedence,Type,Operator) :-
+	(
+	    Operator :== `Oper, Precedence = P1, Type = T1
+	;
+	    op_member(OOps, Precedence,Type,Operator)
+	).
+
+%
+% to recognise whether a variable has already been met in the term
+%
+get_variable("_",Var,Vars) :- !.
+get_variable(S,Var,Vars) :- 
+	cond( prove( member(S,F:features(Vars))),
+	      project(S,Vars) = Var,
+	      cond( prove( F = [1|_]),
+	            get_variable(S,Var,Vars##1),
+		    project(S,Vars) = Var)).
+	
+
+put_in_context(ContextVars,Vars) :-
+	place_variables(features(ContextVars),ContextVars,Vars).
+place_variables([],_,_) :- !.
+place_variables([A|B],ContextVars,Vars) :-
+	get_variable(A,project(A,ContextVars),Vars),
+	place_variables(B,ContextVars,Vars).
+
+%%% to get rid of unnecessary succeed statements
+
+non_strict(virgule) ?
+X virgule succeed -> X.
+X virgule Y -> (X,Y).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Dealing with lambda expressions
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+non_strict('*meta_apply*') ?
+
+'*meta_apply*'(F:lambda,T) ->                   %%% application of a lambda
+ 	X 
+    |  
+        G = copy_lambda(F),
+	diff_list(features(T),G##args,NewArgs), %%% for currying
+
+	evalin(T) = G,                          %%% evaluate the arguments
+	( 
+	    NewArgs :== [],!,
+	    G&@(expr => X) 
+	;
+	    T##args <- NewArgs, X = T 
+        ).
+'*meta_apply*'(F:'*meta_apply*',T) ->           %%% application of an
+						%%% application 
+ 	X | G = evalin(F), X = '*meta_apply*'(G,T).
+
+'*meta_apply*'(F,T) ->                          %%% application of a standard
+						%%% function 
+	X 
+    | 
+        ( 
+	    X = '*apply*'('*functor*' => F)&T, 
+	    X = evalin(X) 
+	).
+
+non_strict(lambda) ?
+lambda(expr => Expr) :-  Expr = evalin(Expr).
+
+copy_lambda(F:lambda) ->                        %%% make a copy of the lambda
+						%%% expression before
+						%%% evaluation, and preserve
+						%%% the environment
+	T
+     |
+	copy_term(F) = T2,
+	T = `(lambda)&strip(T2),
+	P = T##env,
+        map_pred( features(P), 
+	          restore_global(2 => F##env, 3 => P)).
+
+
+restore_global(Att, X, Y) :-               
+	A = project(Att,Y),
+	B = project(Att,X),
+	A <- @,
+	A = B.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Interface
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+syntax(File) :- 
+	open_in(File,S1),
+	open_out(strcon(File,"_expr"),S2),
+	first_statement(S1),
+	close(S1),
+	close(S2).
+
+first_statement(S1) :-
+	FT = first_token,
+	(
+	    FT = [],
+	    !,
+	    nl,nl,
+	    write("Empty File"),
+	    nl
+	;
+            read_new_expr( FT, Bool, Expr, T, LeftToken),
+	    cond( Bool,
+		  cond( T :== assertion,
+		         (
+			     nl, writeq(Expr),write(".")
+			 ),
+		         (
+			     nl, writeq(Expr),write("?")
+			 )),
+		  (
+		      close(S1), 
+		      nl,
+		      write("Syntax error near line ",S1##line_count,
+			        " in file '",S1##input_file_name,"'"),
+		      nl, !, fail
+		  )),
+	    (
+		LeftToken = [],!,
+		open_out("stdout",Str),
+		nl,
+		write("*** File '",S1##input_file_name,"'  parsed"),
+		nl 
+	    ;
+		fail
+	    )
+	;
+	    next_statement(S1)
+	).
+
+next_statement(S1) :-
+	(
+            read_new_expr( ['*rest_token*'|`next_token], Bool, Expr, 
+	                      T, LeftToken),
+	    cond( Bool,
+		  cond(  T :== assertion,
+		         (
+			     nl, nl, writeq(Expr),write(".")
+			 ),
+		         (
+			     nl, nl, writeq(Expr),write(" ?")
+			 )),
+		  (
+		      close(S1),
+		      nl,
+		      write("*** Syntax error near line ",S1##line_count,
+			        " in file '",S1##input_file_name,"'"),
+		      nl,
+		      !, fail
+		  )),
+	     (
+		 LeftToken = [],!,
+		 open_out("stdout",Str),
+		 nl,
+	         write("*** File '",S1##input_file_name,"' parsed"),
+	         nl 
+	     ;
+		 fail
+	     )
+	 ;
+	     next_statement(S1)
+	 ).
+
+
+read_new_expr( R1, Bool, Expr, T, LeftToken) :- 
+	(
+	    expr( Expr, vars => @, 
+	          0 => R1, rest => R2, max => 1200),
+	    (
+		parser_C(["."],R2,LeftToken), T = assertion
+	    ;
+	        parser_C(["?"],R2,LeftToken), T = query
+	    ),
+	    Bool = true,
+	    !
+	;
+	    Bool = false
+	).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

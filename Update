@@ -1,0 +1,9 @@
+#! /bin/csh
+
+# Copyright 1992 Digital Equipment Corporation
+# All Rights Reserved
+
+cp ~/LifePackage/release/*.[ch] ~/Life
+cp ~/LifePackage/release/*.lf ~/Life
+cp ~/LifePackage/release/.set_up_basis ~/Life
+cp ~/LifePackage/release/life_icon ~/Life

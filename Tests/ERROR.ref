@@ -1,0 +1,302 @@
+addtab.diff
+anyorder.diff
+apply.diff
+arith1.diff
+arith2.diff
+arith3.diff
+*** Error: division by zero in B:0 / B.
+*** Error: division by zero in real / 0.
+*** Error: division by zero in 2 / 0.
+arith4.diff
+arith5.diff
+arith6.diff
+*** Error: division by zero in real / 0.
+*** Error: division by zero in 0 / 0.
+*** Error: division by zero in 1 / 0.
+arith7.diff
+*** Error: division by zero in real / 0.
+*** Error: division by zero in real / 0.
+arith8.diff
+arith9.diff
+*** Garbage Collections: 2
+assert1.diff
+*** Garbage Collections: 1
+assert2.diff
+*** Garbage Collections: 6
+assert3.diff
+assert4.diff
+bagof1.diff
+bagof2.diff
+bagof3.diff
+bagof4.diff
+bagof5.diff
+bigstr.diff
+bk_assign.diff
+boites1.diff
+boites2.diff
+bruno_disj.diff
+cb.diff
+chapla.diff
+choice.diff
+clause.diff
+colon.diff
+compose.diff
+constr.diff
+copy1.diff
+copy2.diff
+copy3.diff
+curry1.diff
+*** Garbage Collections: 8
+curry2.diff
+curry3.diff
+curry4.diff
+curry5.diff
+cut1.diff
+cut2.diff
+*** Garbage Collections: 4
+cut3.diff
+cycles1.diff
+cycles2.diff
+decl.diff
+delay.diff
+dichotomy.diff
+dict.diff
+disequality1.diff
+disequality2.diff
+disequality3.diff
+disequality4.diff
+disequality5.diff
+disequality6.diff
+disequality7.diff
+disequality8.diff
+disequality9.diff
+disj1.diff
+disj2.diff
+disj3.diff
+disj4.diff
+disj5.diff
+disj6.diff
+*** Garbage Collections: 2
+dissolve.diff
+*** Error: the user-defined predicate 'p' may not be changed.
+*** Error: the user-defined predicate 'p' may not be changed.
+*** Error: the user-defined predicate 'p' may not be changed.
+*** Error: the user-defined predicate 'p' may not be changed.
+dynstat.diff
+*** Syntax error near line 4: bad expression.
+eoftest.diff
+*** Garbage Collections: 12
+fact.diff
+fail.diff
+feature.diff
+freeze1.diff
+*** Error: the argument @ < @ of freeze must be a predicate.
+*** Error: the argument @ = @ of freeze must be user-defined.
+freeze2.diff
+freeze3.diff
+*** Error: the argument var(@~) of freeze must be user-defined.
+*** Error: the argument @~ < @ of freeze must be a predicate.
+*** Error: the argument write(@) of freeze must be user-defined.
+freeze4.diff
+function1.diff
+function2.diff
+fusil.diff
+*** Garbage Collections: 9
+gauss.diff
+*** Garbage Collections: 74
+gctest.diff
+genint.diff
+glb.diff
+glblub.diff
+grammars.diff
+hamming.diff
+hanoi.diff
+inherit.diff
+intabs.diff
+*** Warning: extending definition of sort 'int'.
+*** Warning: extending definition of sort 'int'.
+inttrace.diff
+isatest.diff
+junk.diff
+lefun1.diff
+lefun2.diff
+list_bda.diff
+listing1.diff
+*** Warning: extending definition of sort 'int'.
+*** Warning: extending definition of sort 'zero'.
+*** Warning: extending definition of sort 'int'.
+listing2.diff
+loadquery.diff
+long.diff
+*** Garbage Collections: 12
+longstr.diff
+loop.diff
+lub.diff
+machine.diff
+*** Garbage Collections: 3
+magic.diff
+makestr.diff
+mort.diff
+*** Error: [@|@] should be a nil-terminated list in mresiduate.
+*** Error: {@;@;@} should be a nil-terminated list in mresiduate.
+mresid.diff
+nesting.diff
+nicetest.diff
+nonstrict1.diff
+nonstrict2.diff
+nonstrict3.diff
+nonstrict4.diff
+nonstrict5.diff
+numeric.diff
+op1.diff
+*** Error: numbers or strings may not be operators in '*op*'(500,xfy,"aaa").
+*** Error: numbers or strings may not be operators in '*op*'(500,xfy,123).
+*** Error: numbers or strings may not be operators in '*op*'(500,xfy,123.3).
+*** Error: bad operator kind 'xff'.
+*** Error: precedence must range from 1 to 1200 in '*op*'(5000,xfy,asd).
+*** Error: precedence must range from 1 to 1200 in '*op*'(0,xfy,asd).
+*** Error: precedence must be a positive integer in '*op*'(- 234,xfy,asd).
+*** Error: precedence must be a positive integer in '*op*'(abc,xfy,asd).
+*** Error: argument missing in '*op*'(500,xfy).
+*** Error: argument missing in '*op*'(500,3 => asd).
+*** Error: argument missing in '*op*'(2 => xfy,3 => asd).
+op2.diff
+order.diff
+parents.diff
+parse.diff
+part.diff
+person1.diff
+person2.diff
+*** Warning: extending definition of sort 'int'.
+posint.diff
+preparser.diff
+*** Warning: extending definition of sort 'int'.
+*** Garbage Collections: 15
+prime.diff
+print1.diff
+print2.diff
+*** Error: argument in print_depth(...) must be positive or zero.
+*** Error: argument in print_depth(-1) must be positive or zero.
+print_depth1.diff
+print_depth2.diff
+printvar.diff
+prove.diff
+pyth.diff
+*** Error: the user-defined function 'where' may not be changed.
+qsort1.diff
+qsort2.diff
+query_decl.diff
+resid1.diff
+resid2.diff
+retract1.diff
+*** Garbage Collections: 1
+retract2.diff
+*** Garbage Collections: 1
+retract3.diff
+*** Garbage Collections: 1
+retract4.diff
+*** Garbage Collections: 1
+retract5.diff
+retract6.diff
+retract7.diff
+rootsort.diff
+schedule1.diff
+*** Garbage Collections: 7
+schedule2.diff
+school.diff
+self.diff
+share.diff
+simp_eqn.diff
+*** Garbage Collections: 7
+smalltwente.diff
+smm.diff
+soap.diff
+sortcycle1.diff
+*** Error: there is a cycle in the sort hierarchy.
+*** Cycle: [j <| n <| a <| b <| d <| f <| j]
+sortcycle2.diff
+*** Error: there is a cycle in the sort hierarchy.
+*** Cycle: [j <| n <| a <| b <| d <| f <| j]
+sortcycle3.diff
+sortcycle4.diff
+*** Error: there is a cycle in the sort hierarchy.
+*** Cycle: [j <| o <| e <| j]
+sortcycle5.diff
+*** Garbage Collections: 2
+str.diff
+str2psi.diff
+strbug.diff
+*** Garbage Collections: 6
+streams.diff
+subs.diff
+*** Garbage Collections: 12
+subsort.diff
+t3201.diff
+t3202.diff
+t3203.diff
+t3204.diff
+t3205.diff
+t3206.diff
+t3207.diff
+*** Error: division by zero in 3 / 0.
+t4105.diff
+t4202.diff
+t4502.diff
+t4505.diff
+*** Garbage Collections: 6
+
+*** OUT OF MEMORY ***
+
+t8101.diff
+*** Error: square root of negative number in sqrt(-1).
+*** Error: division by zero in 1 / 0.
+*** Error: logarithm of zero in log(0).
+t8102.diff
+*** Warning: extending definition of sort 'real'.
+t8103.diff
+t8104.diff
+*** Warning: extending definition of sort 'int'.
+*** Garbage Collections: 3
+
+*** OUT OF MEMORY ***
+
+t8105.diff
+tan.diff
+test00.diff
+test03.diff
+test04.diff
+*** Garbage Collections: 2
+titi.diff
+tri_ins.diff
+tripeq.diff
+unify.diff
+varlevel.diff
+varlevel2.diff
+wam.diff
+*** Garbage Collections: 4
+wambruno.diff
+wlife.diff
+write.diff
+writeq.diff
+*** Garbage Collections: 2
+z_comb.diff
+*** Garbage Collections: 70
+z_cut2.diff
+*** Garbage Collections: 10
+z_gcsimp.diff
+*** Garbage Collections: 7
+*** Error: psi-term too large -- get a bigger Life!
+z_gctoken1.diff
+*** Garbage Collections: 6
+z_gctoken2.diff
+*** Garbage Collections: 2
+z_maurice.diff
+*** Garbage Collections: 23
+
+*** OUT OF MEMORY ***
+
+z_nestdepth.diff
+*** Garbage Collections: 4
+z_power_4.diff
+*** Garbage Collections: 234
+z_pyth_gc.diff

@@ -1,0 +1,100 @@
+% Copyright 1992 Digital Equipment Corporation.
+% Distributed only by permission.
+%
+% Last modified on Fri Jun 12 17:48:06 MET DST 1992 by herve
+%
+%
+% X constants for Life
+% 
+
+
+% a macro to define the function Name and Arg with value Val
+defConstant(Name,Arg,Val) :- assert(rootsort(Name):@(`Arg,Val)), assert(Arg->Val).
+
+xTrue->1.
+xFalse->0.
+
+% black and white pixels by default
+dynamic(xBlack)?
+dynamic(xWhite)?
+xBlack->0.
+xWhite->1.
+
+% extra values
+xThinLine->0.
+
+% GC attributes id
+xFunctionId->0.
+xPlaneMaskId->1.
+xForegroundId->2.
+xBackgroundId->3.
+xLineWidthId->4.
+xLineStyleId->5.
+xCapStyleId->6.
+xJoinStyleId->7.
+xFillStyleId->8.
+xFillRuleId->9.
+xTileId->10.
+xStippleId->11.
+xTileStipXOriginId->12.
+xTileStipYOriginId->13.
+xFontId->14.
+xSubwindowModeId->15.
+xGraphicsExposuresId->16.
+xClipXOriginId->17.
+xClipYOriginId->18.
+xClipMaskId->19.
+xDashOffsetId->20.
+xDashLengthId->21.
+xArcModeId->22.
+
+% GC functions
+xClear->0.
+xAnd->1.
+xAndReverse->2.
+xCopy->3.
+xAndInverted->4.
+xNoop->5.
+xXor->6.
+xOr->7.
+xNor->8.
+xEquiv->9.
+xInvert->10.
+xOrReverse->11.
+xCopyInverted->12.
+xOrInverted->13.
+xNand->14.
+xSet->15.
+
+% event masks 
+xKeyPressMask->1<<0.
+xKeyReleaseMask->1<<1.
+xButtonPressMask->1<<2.
+xButtonReleaseMask->1<<3.
+xEnterWindowMask->1<<4.
+xLeaveWindowMask->1<<5.
+xPointerMotionMask->1<<6.
+xPointerMotionHintMask->1<<7.
+xButton1MotionMask->1<<8.
+xButton2MotionMask->1<<9.
+xButton3MotionMask->1<<10.
+xButton4MotionMask->1<<11.
+xButton5MotionMask->1<<12.
+xButtonMotionMask->1<<13.
+xKeymapStateMask->1<<14.
+xExposureMask->1<<15.
+xVisibilityChangeMask->1<<16.
+xStructureNotifyMask->1<<17.
+xResizeRedirectMask->1<<18.
+xSubstructureNotifyMask->1<<19.
+xSubstructureRedirectMask->1<<20.
+xFocusChangeMask->1<<21.
+xPropertyChangeMask->1<<22.
+xColormapChangeMask->1<<23.
+xOwnerGrabButtonMask->1<<24.
+
+% special keys
+xKeyReturn->13.
+xKeyLinefeed->10.
+xKeyTab->9.
+xKeyBackSpace->8.

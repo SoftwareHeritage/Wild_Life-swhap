@@ -1,0 +1,286 @@
+Life package -- created Thu Jul  9 10:31:04 MET DST 1992 by vanroy
+current owner vanroy
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The Wild_LIFE interpreter version 0.9
+-------------------------------------
+
+Copyright 1992 Digital Equipment Corporation, Paris Research Laboratory.
+All Rights Reserved.
+
+Written by Peter Van Roy, Richard Meyer, and Jean-Claude Herve, with
+contributions from Hassan Ait-Kaci, Seth Copen Goldstein, and Abder Aggoun.
+The user manual was written by Hassan Ait-Kaci, Richard Meyer, and Peter
+Van Roy.
+
+The Wild_LIFE interpreter is the first implementation of the LIFE
+language available to the general public.  It is a product of the
+Paradise project at DEC PRL.  Research activities of Paradise deal
+with issues pertaining to general purpose programming by specifying
+executable constraints, including theoretical foundations, implementation,
+and development of applications.
+
+Wild_LIFE has been extensively tested on DECstations running Ultrix.  We
+are committed to support this system and we are working on substantial
+improvements.  We would appreciate for you to send your name and address
+to life-request@prl.dec.com.  That will make it easier for us to notify
+you of upgrades.  We solicit feedback on any aspect of the system: bug
+reports, functionality, extensions, user manual, user interface, examples,
+etc.  If you extend the system, we would like to know exactly what you did
+and why.
+
+*** WARNING: The X interface has been tested only on DECstations.
+
+*** WARNING: To be able to run all the example programs on a DECstation,
+    it is mandatory that you install *all* the MIT X fonts.  Consult your
+    local X guru!
+
+*** URGENT REQUEST: We do not have an adequate environment to test this
+    system on multiple platforms (e.g., SPARCstations).  We would greatly
+    appreciate if someone would try installing it on other platforms and
+    tell us what modifications were necessary.  In particular, we would
+    appreciate someone getting the X interface to work on SPARCstations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The LIFE language
+
+LIFE (Logic, Inheritance, Functions, and Equations) is an experimental
+programming language with a powerful facility for structured type
+inheritance. It reconciles styles from functional programming, logic
+programming, and object-oriented programming. It subsumes, and fully
+contains the functionality of, the precursor languages LOGIN and Le_Fun.
+The syntax of Wild_LIFE has been kept as close as possible to that of the
+Edinburgh family of Prolog so that Prolog compatibility is easy to
+achieve.
+
+From a theoretical point of view, LIFE implements a constraint logic
+programming language with equality (unification) and entailment (matching)
+constraints over order-sorted feature terms. The interplay of unification
+and matching provides an implicit coroutining facility thanks to an
+automatic suspension mechanism.  This allows interleaving interpretation
+of relational and functional expressions which specify structural
+dependencies on objects.
+
+The basic data structure is the order-sorted feature term, or psi-term.
+Psi-terms are a natural generalisation of first-order terms. A psi-term may
+be viewed as being to a Prolog term what an open-ended dynamic record is to
+a static array.  That is, a psi-term has named fields and fields may be
+added at run-time.  Psi-terms may be cyclic, which means they are rooted
+graphs and that the occur-check problem of Prolog goes away.
+
+A program in LIFE consists of a declaration of the a sort hierarchy
+constraining psi-terms, along with functions and predicates defining
+operations on psi-terms.  Functions are called with matching (i.e., an
+implication constraint) and they suspend if the truth of the implication
+cannot be determined.  Predicates are called with unification (i.e., an
+equality constraint) and they force the equality to be true.  They may try
+more than one possible value with backtracking.  In other words, a
+function waits for its actual arguments to carry as much information as
+imposed by its formal arguments, whereas a predicate takes the initiative
+of synthesizing missing information using its definition's argument
+patterns.  These two modes of computation are complementary and allow an
+elegant programming style.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Installation:
+
+1. Uncompress and untar the file Life.tar.Z.  This creates the Life/
+   directory.
+2. Change directory to the Life/ directory (which contains this README file).
+3. Run 'make' to create the executable 'wild_life'.  The complete system
+   including the .o files and the executable needs about 5.4 MB of disk
+   space.
+   The Tests/ subdirectory may be removed to save space (see below).
+4. The wild_life.1 file is a man page for the system.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Remarks:
+
+1. On startup, the interpreter loads an optional .wild_life customization
+   file.  It looks for this file first in the current directory and then
+   in your home directory.  If none is found then none is loaded.
+2. The interpreter may be run from anywhere and copied to anywhere and
+   executed there.  However, the Life/ directory must remain in the same
+   place, since the interpreter uses several files in it during startup.
+3. The subdirectory Tests/ contains a series of test programs.  They may
+   be run by cd'ing to Tests/ and running the script Test_all (without
+   arguments).  The script creates a file ERROR.diff that shows the
+   differences between the obtained results and the correct results.  After 
+   running it, you may see some small differences due to the Life/
+   directory being in a different path.  These small differences may be
+   ignored.  The Tests/ directory is rather large (about 1.6 MB).  It may
+   be removed to save space.
+4. By default, the system has a memory space of 4 MB.  This can be changed
+   by redefining the MEM_SIZE parameter in the file extern.h.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Documentation and example programs:
+
+The subdirectory Documents/ contains the most recent draft of the user manual
+in both PostScript and dvi formats.
+
+The subdirectory Examples/ contains some example programs.  These can be
+loaded from anywhere with the 'load' command without an explicit path, since
+'load' does a search.  See the file Examples/README for more information.
+
+The Paradise project has written many articles and research reports on
+various aspects of LIFE.  What follows is a list along with the subject
+line of the message to send to doc-server@prl.dec.com to get a copy.
+The online version is sent back to you as a set of PostScript files that
+may each be printed independently.  For example, to get a PostScript copy
+of report number 12, send mail to doc-server@prl.dec.com with subject
+"send report 12".  To get the printed version you must put your name and
+address in the message body.
+
+All articles and reports relevant to Paradise.
+         Command for Online Version:  send paradise
+         Command for Printed Version: order paradise
+
+A list of all articles published by PRL:
+         Command for Online Version:  send index articles
+
+A list of all reports published by PRL:
+         Command for Online Version:  send index reports
+
+Research Report Number 11: Towards a Meaning of LIFE.
+Hassan Ait-Kaci and Andreas Podelski. June 1991.
+(Revised version, Oct. 1992)
+         Command for Online Version:  send report 11
+         Command for Printed Version: order report 11
+
+Research Report Number 12: Residuation and Guarded Rules
+for Constraint Logic Programming. Gert Smolka. June 1991.
+         Command for Online Version:  send report 12
+         Command for Printed Version: order report 12
+
+Research Report Number 13: Functions as Passive Constraints
+in LIFE. Hassan Ait-Kaci and Andreas Podelski. June 1991.
+(will be sent as soon as available)
+         Command for Online Version:  send report 13
+         Command for Printed Version: order report 13
+
+Hassan Ait-Kaci, "A Glimpse of Paradise",
+Proceedings of the Workshop on Programming Languages of the 90's,
+Kiev, Ukraine, USSR (October, 1990).
+Lecture Notes in Computer Science, Springer-verlag, 1991
+         Command for Online Version:  send article AIT1
+         Command for Printed Version: order article AIT1
+
+Hassan Ait-Kaci, "An Overview of LIFE",
+Proceedings of the Workshop on Programming Languages of the 90's,
+Kiev, Ukraine, USSR (October, 1990).
+Lecture Notes in Computer Science, Springer-verlag, 1991
+         Command for Online Version:  send article AIT2
+         Command for Printed Version: order article AIT2
+
+Hassan Ait-Kaci and Patrick Lincoln,
+"LIFE, a Natural Language for Natural Language",
+T.A. Informations, Revue internationale du traitement automatique
+du langage, vol. 30, number 1-2, 1989.
+         Command for Online Version:  send article AIT3
+         Command for Printed Version: order article AIT3
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Example: Running the SEND+MORE=MONEY puzzle.
+
+This program finds all assignments of different digits from 0 through 9
+to the letters in SEND+MORE=MONEY so that the addition is correct.
+
+% wild_life
+Wild_Life Interpreter Version 0.9 (Fri Oct  9 16:20:12 MET 1992)
+Copyright (C) 1991-92 Digital Equipment Corporation, Paris Research Laboratory
+No customizing file loaded.
+> load(solve)?
+*** File "/_/vanroy/_/Life/Examples/solve.lf" loaded
+
+*** Yes
+> solve?
+
+ SEND     9567
++MORE    +1085
+-----    -----
+MONEY    10652
+
+
+*** No
+>
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Bug reporting:
+
+If you find what you think is a new bug, please, first read the manual
+carefully to see if it really is a bug.  If it is, try to find the
+*smallest* program that illustrates the bug and mail it to
+life-bugs@prl.dec.com together with a script that shows the bug.  An
+especially sensitive way to find bugs is to do your work in 'verbose'
+mode, which tells you what is happening to the system stacks.
+
+We are working hard to correct all bugs, small as well as large.  Future
+releases will be more robust and have more functionality.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The most important known bugs:
+
+1. Recursive sort declarations need special care: they should be accompanied
+   by a 'delay_check' call and they must be used in a particular way,
+   otherwise the interpreter goes into an infinite loop when trying to
+   satisfy the sort's constraints.  'delay_check' is propagated correctly to
+   the sort's children.
+
+2. The system incorrectly handles deep guards, that is, evaluable things
+   (which includes functions, predicates, and disjunctions) inside the heads
+   of function definitions (but evaluable things inside the heads of predicate
+   definitions are handled correctly).  This has to do with the global/local
+   variable distinction: function calls do not change their arguments.
+
+3. The system is not complete for disentailment of equality constraints
+   introduced in the actual arguments of a function call.  However, it
+   *is* complete for disentailment of equality constraints in the function
+   definition.  If you don't understand this, then this problem will most
+   likely not affect you.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Relevant electronic mail addresses:
+
+   Here are email addresses that are relevant to LIFE and Paradise:
+
+   life-users@prl.dec.com
+
+      This is a mailing list of people using LIFE or interested in
+      specific aspects of LIFE, whether theory, implementation, or
+      applications. It is meant as a public forum to answer FAQ's and
+      share programs and ideas. It is not meant to report bugs, although
+      it may be used to ask public opinions about surprising behavior of
+      Wild_LIFE that may turn out to be a bug and to warn others against
+      confirmed bugs.
+
+   life-request@prl.dec.com
+
+      This address is to be used to request to be put on, or removed
+      from, the life-users mailing list.
+
+   life-bugs@prl.dec.com
+
+      When you strongly suspect a bug (i.e., after reading the manual,
+      the life-users' FAQ's, and polling life-users's opinion about the
+      symptoms), try to find the *smallest* program that illustrates the
+      bug and mail it to this address together with a script that shows
+      the bug.
+
+   paradise@prl.dec.com
+
+      This is PRL's local LIFE community. That is, all the PRL people
+      involved in some activity in the Paradise project at PRL. Use this
+      for general communication of matters of interest to this group
+      alone. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,0 +1,17 @@
+#! /bin/csh
+
+# Copyright 1992 Digital Equipment Corporation
+# All Rights Reserved
+
+#set life = ~vanroy/LifePackage/src/wild_life
+
+foreach i ($argv)
+	(echo 'load("' $i:r.lf '")?' | noblank ; echo "" ; \
+	cat $i:r.in  ; echo "halt?") | \
+        tee tmp | \
+	../wild_life | \
+	egrep -v '(Wild_Life|customizing|Copyright|Default|Garbage|Exiting|Peter)' > $i:r.out
+	diff $i:r.out $i:r.ref > $i:r.diff
+	wc $i:r.diff
+end
+

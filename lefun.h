@@ -1,0 +1,65 @@
+/* Copyright 1991 Digital Equipment Corporation.
+** All Rights Reserved.
+*****************************************************************/
+
+extern int match_aim();
+extern int eval_aim();
+
+extern void residuate_double();
+extern void residuate();
+extern void residuate2();
+extern void residuate3();
+extern void curry();
+
+extern int do_residuation();
+extern void do_currying();
+
+extern void release_resid();
+extern void release_resid_notrail();
+
+#define deref(P)         {deref_ptr(P);if (deref_eval(P)) return TRUE;}
+#define deref_void(P)    {deref_ptr(P);deref_eval(P);}
+#define deref_rec(P)     {deref_ptr(P);if (deref_rec_eval(P)) return TRUE;}
+#define deref_args(P,S)  {deref_ptr(P);if (deref_args_eval(P,S)) return TRUE;}
+#define deref_args_void(P)  {deref_ptr(P);deref_args_eval(P);}
+
+/* Checking out functions */
+extern void check_func();
+extern int  deref_eval();
+extern int  deref_rec_eval();
+extern void deref2_eval();
+extern void deref2_rec_eval();
+
+/* External check out (i_ routines do not check out functions) */
+extern int f_check_out();
+extern int i_check_out();
+extern int i_eval_args();
+
+/* Set constants for deref_args */
+#define set_empty    0
+#define set_1        1
+#define set_2        2
+#define set_1_2      3
+#define set_1_2_3    7
+#define set_1_2_3_4 15
+
+extern ptr_goal resid_aim;
+extern ptr_resid_list resid_vars; /* 21.9 */
+extern ptr_goal resid_limit;
+extern int curried;
+extern int can_curry;
+
+/* Residuation block state handling */
+extern void save_resid();
+extern void restore_resid();
+
+typedef struct _resid_block *ptr_resid_block;
+
+typedef struct _resid_block {
+   int cc_cr; /* 11.9 */
+   ptr_goal ra;
+   /* int cc; 11.9 */
+   /* int cr; 11.9 */
+   ptr_resid_list rv; /* 21.9 */
+   ptr_psi_term md;
+} resid_block;

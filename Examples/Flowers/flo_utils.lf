@@ -1,0 +1,144 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                           UTILITIES
+%
+% This file contains a number of utilities used by the demo. 
+%
+% This file is loaded automatically by the main file of the demo (flowers.lf).
+%                                                                             
+% Author: Bruno Dumant                                                      
+%                                                                             
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%% This operator is syntactic sugar for project
+
+op(400,yfx,##)?
+X##Y -> project(Y,X).
+
+
+%%% dynamic definition of a predicate (equivalent of setq for predicates)
+
+non_strict(setPred)?
+setPred(A,B) :-
+        C = eval(B),
+        retract(A),
+        !,
+        U=rootsort(A),
+        U=@(C),
+        assert(U).
+setPred(A,B) :-
+        dynamic(A),
+        C = eval(B),
+        U=A,
+        U=@(C),
+        assert(U).
+
+%%% pi 
+ 
+pi -> 3.14159265359 .
+
+
+%%%  make a new root from an old one and a suffix
+
+suffixRoot(P,S:string) -> str2psi(strcon(psi2str(P),S)).
+
+
+%%% convert a real to string form with fixed number of decimals
+
+real2str(N:int) -> int2str(N).
+real2str(N:real,P) -> 
+	X
+    |
+        decomp_real(N,Int,Dec),
+	X = strcon(strcon(int2str(Int),"."),strfy(Dec,P-1)).
+
+strfy(0,_) -> "".
+strfy(N,0) -> 
+	X 
+    | 
+        decomp_real(10*N,Int,Dec),
+	cond( Dec =< 0.5,
+	      X = int2str(Int),
+	      X = int2str(Int+1)).
+strfy(N,P) -> strcon(int2str(F:floor(M:(10*N))),strfy(M-F,P-1)).
+
+
+decomp_real(X,Int,Dec) :-
+	cond( X >= 0,
+	      ( 
+		  Int = floor(X),
+		  Dec = X - Int
+	      ),
+	      (
+		  Int = ceiling(X),
+		  Dec = abs( X - Int)
+	      )).
+
+
+%%% make a copy of the pointer to an object
+
+copy_pointer(T) -> rootsort(T)&strip(T).
+
+
+%%% apply a predicate to a list of arguments, at the first position
+
+map_pred([],P) :- !.
+map_pred([A|B],P) :-
+	copy_pointer(P):@(A),
+	map_pred(B,P).
+
+
+%%% apply a predicate to a list of arguments, at the position defined by Att
+
+map_pred_att([],P,Att) :- !.
+map_pred_att([A|B],P,Att) :-
+	copy_pointer(P)&( X | project(Att,X) = A),
+	map_pred_att(B,P,Att).
+
+map_pred_att_special([],P,Att) :- !.
+map_pred_att_special([A|B],P,Att) :-
+	Z = copy_pointer(P)&( X | project(Att,X) = A),
+	evalin(Z),
+	map_pred_att_special(B,P,Att).
+
+
+%%% hashing
+
+add_in_inthash2( Name, X, Y, Z) :-
+	T = make_inthash2_name(Name,X,Y),
+	setq(T,Z).
+
+find_in_inthash2(Name, X, Y, Z) :-
+	T = make_inthash2_name(Name,X,Y),
+	is_function(T),
+	Z = eval(T).
+	
+make_inthash2_name(Name,X,Y) ->
+	str2psi(strcon(strcon(int2str(X),strcon("x",int2str(Y))),Name)).
+
+
+%%% Product of a 3x2 matrix 3x2 with a 2x1 matrix
+
+xmat(@(X1,Y1,Z1),@(X2,Y2,Z2),A,B) -> @(A*X1+B*X2,A*Y1+B*Y2,A*Z1+B*Z2).
+
+
+%%% ns is used to encapsulate function in a non_strict environment
+
+non_strict(ns) ?
+
+%%% long jumps
+
+non_strict(catch) ?
+catch(A) :- C = '*get_choice*', setq(A,C).
+
+throw(A) :- '*set_choice*'(A), fail.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,0 +1,147 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                           UTILITIES
+%
+% This file contains a number of utilities used by the tokenizer and the 
+% parser. It is loaded automatically.
+%                                                                             
+% Author: Bruno Dumant                                                      
+%                                                                             
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% transform a psiterm into a string
+
+str(X) -> cond(is_value(X),strval(X),psi2str(X)).
+
+strval(S:string) -> S.
+strval(N:real) -> int2str(N).
+
+
+%%% This operator is syntactic sugar for project
+
+op(400,yfx,##)?
+X##Y -> project(Y,X).
+
+
+%%% dynamic definition of a predicate (equivalent of setq for predicates)
+
+map_pred([],P) :- !.
+map_pred([A|B],P) :-
+	copy_pointer(P):@(A),
+	map_pred(B,P).
+
+map_pred_att([],P,Att) :- !.
+map_pred_att([A|B],P,Att) :-
+	copy_pointer(P)&( X | project(Att,X) = A),
+	map_pred_att(B,P,Att).
+
+%%% copy the pointer to an object
+
+copy_pointer(T) -> rootsort(T):strip(T).
+
+
+%%% setq for functions WITH arguments
+
+non_strict(set_new_func_arg) ?
+set_new_func_arg(A,B) :-
+	R = rootsort(A),
+	dynamic(R),
+	assert((A -> B)).
+
+non_strict(set_func_arg) ?
+set_func_arg(A,B) :- 
+	R = rootsort(A),
+	retract(( R -> @ )),
+	assert(( A -> B )). 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% List manipulation utilities
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+merge_ad([],L) -> L.
+merge_ad([A|B],C) -> 
+	cond( member_ad(C,A),
+	      merge_ad(B,C),
+	      [A|merge_ad(B,C)]).
+
+no_redundant_ad([]) -> [].
+no_redundant_ad([A|B]) -> 
+	cond( member_ad(B,A),
+	      no_redundant_ad(B),
+	      [A|no_redundant_ad(B)]).
+
+member_ad([],A) -> false.
+member_ad([B|C],A) ->
+	cond( A === B,
+	      true,
+	      member_ad(C,A)).
+
+inter_ad([],L) -> [].
+inter_ad([A|B],C) ->
+	cond( member_ad(C,A),
+	      [A| inter_ad(B,C)],
+	      inter_ad(B,C)).
+
+%
+% diff_list_ad(L1,L2,L3): L3 is L2 \ (L1 inter L2)
+%
+
+diff_list_ad([],L2,L2) :- !.
+diff_list_ad(L1:[A|NewL1],L2,RestL2) :-
+	cond( memberAndRest_ad(A,L2,InterRestL2),
+	      diff_list_ad(NewL1,InterRestL2,RestL2),
+	      diff_list_ad(NewL1,L2,RestL2)).
+
+%
+% memberAndRest(A,List,Rest) returns true if A is a member of List, with Rest
+% containing the other members of List. 
+%
+
+memberAndRest_ad(A,[],Rest) -> false.
+memberAndRest_ad(A,[B|C],Rest) ->
+	cond( A === B,
+	      ( true | Rest = C),
+	      memberAndRest_ad(A,C,OtherRest) | Rest = [B|OtherRest] ).
+
+%
+% suppress_ad(List,Ad) returns a new list with no member at adress Ad
+%
+
+supress_ad([],Ad) -> [].
+suppress_ad([A|B],Ad) ->
+	cond( A === Ad,
+	      suppress_ad(B,Ad),
+	      [A|suppress_ad(B,Ad)]).
+
+
+
+%
+% diff_list(L1,L2,L3): L3 is L2 \ (L1 inter L2)
+%
+
+diff_list([],L2,L2) :- !.
+diff_list(L1:[A|NewL1],L2,RestL2) :-
+	cond( memberAndRest(A,L2,InterRestL2),
+	      diff_list(NewL1,InterRestL2,RestL2),
+	      diff_list(NewL1,L2,RestL2)).
+
+%
+% memberAndRest(A,List,Rest) returns true if A is a member of List, with Rest
+% containing the other members of List. 
+%
+
+memberAndRest(A,[],Rest) -> false.
+memberAndRest(A,[B|C],Rest) ->
+	cond( prove( A =B),
+	      ( true | Rest = C),
+	      memberAndRest(A,C,OtherRest) | Rest = [B|OtherRest] ).
+

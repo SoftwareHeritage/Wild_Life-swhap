@@ -1,0 +1,123 @@
+% FILE. . . . . /_/hassan/_/life/defs/xstuff
+% EDIT BY . . . Hassan Ait-Kaci
+% ON MACHINE. . Prl316
+% STARTED ON. . Thu Apr 30 10:21:15 1992
+
+% Last modified on Mon May 18 17:10:40 MET DST 1992 by herve 
+%      modified on Fri May 15 23:37:33 1992 by Hassan
+
+% correspondence table between symbolic window attributes and X numbers
+
+dynamic(default_display,default_window,default_font)?
+
+xOpenConnection(D), assert(default_display -> D)?
+
+xCreateWindow(default_display,10,10,100,100,W,permanent=>true,show=>false),
+assert(default_window -> W)?
+
+dynamic('*window*')?
+
+refresh_window :- xRefreshWindow(default_window).
+
+show_window :- xShowWindow(default_window).
+
+hide_window :- xHideWindow(default_window).
+
+open_window(Width,Height,x=>X,y=>Y,title=>Title,font=>Font) :-
+	close_window,assert('*window*'),
+	x_window(Width,Height,x=>X,y=>Y,title=>Title,font=>Font).
+
+close_window :- retract('*window*'),!,x_close.
+close_window.
+
+x_window(Width,Height,x=>X:{100;int},y=>Y:{10;int},
+         title=>Title:{"Life";string},
+	 font=>Font:{xDefaultFontName;string}) :- !,
+	xOpenConnection(D), setq(default_display,D),
+	xCreateWindow(D,X,Y,Width,Height,W,
+	              windowtitle=>Title,permanent=>true),
+	setq(default_window,W),
+	set_default_font(Font).
+
+x_close :- xDestroyWindow(default_window).
+
+set_default_font(S:string) :- xLoadFont(default_display,F,S),
+			      setq(default_font,F:@(name=>S)).
+
+x_draw(X0,Y0,X1,Y1,function=>F,color=>C,linewidth=>W)
+	:- !,
+	xDrawLine(default_window,
+		  function => F,
+		  color => C,
+		  linewidth => W,
+		  X0,Y0,X1,Y1).
+
+x_draw_string(X,Y,S,function=>F,color=>C)
+	:- !,
+	xDrawImageString(default_window,
+			 function => F,
+			 color => C,
+			 font => default_font,
+			 X,Y,S).
+
+x_trace_string(X,Y,S,function=>F,color=>C)
+	:- !,
+	xDrawString(default_window,
+		    function => F,
+		    color => C,
+		    font => default_font,
+		    X,Y,S).
+
+x_ellipse(X,Y,W,H,function=>F,color=>C,linewidth=>T)
+	:- !,
+	xDrawOval(default_window,
+		  function => F,
+		  linewidth => T,
+		  color => C,
+		  X,Y,W,H).
+
+x_rectangle(X,Y,W,H,function=>F,color=>C,linewidth=>T)
+	:- !,
+	xDrawRectangle(default_window,
+		       function => F,
+		       linewidth => T,
+		       color => C,
+		       X,Y,W,H).
+
+x_fillrectangle(X,Y,W,H,C)
+	:- xFillRectangle(default_window,
+			  color => C,
+			  X,Y,W,H).
+
+x_fillellipse(X,Y,W,H,C)
+	:- xFillOval(default_window,
+		     color => C,
+		     X,Y,W,H).
+
+cload(xcolors)?
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+attribute_id(x, 0) :- !.
+attribute_id(y, 1) :- !.
+attribute_id(width, 2) :- !.
+attribute_id(height, 3) :- !.
+attribute_id(borderwidth, 4) :- !.
+attribute_id(backingplanes, 14) :- !.
+attribute_id(backingpixel, 15) :- !.
+attribute_id(colormap, 20) :- !.
+attribute_id(sibling, 23) :- !.
+attribute_id(backpixel, 26) :- !.
+attribute_id(borderpixel, 28) :- !.
+attribute_id(cursor, 29) :- !.
+
+C:xModifyWindow(D,W) :-
+	[(1,D),(2,W)|L] = listify_body(C),
+	modify_attributes(D,W,L).
+
+modify_attributes(D,W,[(A,V)|R]) :- !,
+	attribute_id(A,I),
+	xcSetWindowAttribute(D,W,I,V),
+	modify_attributes(D,W,R).
+modify_attributes(D,W,[]).
+

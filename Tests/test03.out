@@ -1,0 +1,563 @@
+> 
+*** Yes
+> > 
+% '(' is undefined.
+
+% ')' is undefined.
+
+% '*** ERROR ***' is undefined.
+
+% '.' is undefined.
+
+% '//' is undefined.
+
+% '/_/vanroy/_/Life/xconstants.lf' is undefined.
+
+% '/_/vanroy/_/Life/xgetset.lf' is undefined.
+
+% '/_/vanroy/_/Life/xpred.lf' is undefined.
+
+% '/_/vanroy/_/Life/xtables.lf' is undefined.
+
+% '1' is undefined.
+
+% '2' is undefined.
+
+% '::' is undefined.
+
+% '<NULL PSI TERM>' is undefined.
+
+% '=>' is undefined.
+
+% '?' is undefined.
+
+% '[' is undefined.
+
+% '\' is undefined.
+
+% ']' is undefined.
+
+built_in <| @.
+'*list_object*' <| built_in.
+string <| built_in.
+real <| built_in.
+bool <| built_in.
+
+% 'color' is undefined.
+
+% 'day' is undefined.
+
+% 'display' is undefined.
+
+% 'display_list' is undefined.
+
+drawable <| @.
+window <| drawable.
+pixmap <| drawable.
+
+% 'end_of_file' is undefined.
+
+event <| @.
+null_event <| event.
+input_event <| event.
+expose_event <| event.
+destroy_event <| event.
+other_event <| event.
+
+% 'eventmask' is undefined.
+
+% 'font' is undefined.
+
+% 'function' is undefined.
+
+% 'functor' is undefined.
+
+% 'fx' is undefined.
+
+% 'fy' is undefined.
+
+% 'graphic_context' is undefined.
+
+% 'hour' is undefined.
+
+% 'icontitle' is undefined.
+
+% 'id' is undefined.
+
+% 'input_file' is undefined.
+
+% 'kind' is undefined.
+
+% 'linewidth' is undefined.
+
+% 'load_path' is undefined.
+
+% 'load_suffixes' is undefined.
+
+% 'maxindex' is undefined.
+
+% 'minute' is undefined.
+
+% 'month' is undefined.
+
+% 'mouse_button' is undefined.
+
+% 'permanent' is undefined.
+
+% 'precedence' is undefined.
+
+% 'pxKeymapToCodes' is undefined.
+
+% 'pxListGet' is undefined.
+
+% 'pxMaskFromBits' is undefined.
+
+% 'pxVectorGet' is undefined.
+
+% 'pxmEvent' is undefined.
+
+% 'pxp_WM_HINTS' is undefined.
+
+% 'pxp_WM_NORMAL_HINTS' is undefined.
+
+% 'second' is undefined.
+
+% 'show' is undefined.
+
+% 'stream' is undefined.
+
+% 'test03.lf' is undefined.
+
+% 'time' is undefined.
+
+% 'weekday' is undefined.
+
+% 'windowtitle' is undefined.
+
+% 'xAbove' is undefined.
+
+% 'xAfterFlush' is undefined.
+
+% 'xAfterReading' is undefined.
+
+% 'xAllTemporary' is undefined.
+
+% 'xAlready' is undefined.
+
+% 'xAlreadyGrabbed' is undefined.
+
+% 'xAlways' is undefined.
+
+% 'xAncestor' is undefined.
+
+% 'xAny' is undefined.
+
+% 'xAppend' is undefined.
+
+% 'xAsyncBoth' is undefined.
+
+% 'xAsyncKeyboard' is undefined.
+
+% 'xAsyncPointer' is undefined.
+
+% 'xBaseHeight' is undefined.
+
+% 'xBaseWidth' is undefined.
+
+% 'xBelow' is undefined.
+
+% 'xBevel' is undefined.
+
+% 'xBlanking' is undefined.
+
+% 'xBorderWidth' is undefined.
+
+% 'xBottomIf' is undefined.
+
+% 'xButt' is undefined.
+
+% 'xButton1' is undefined.
+
+% 'xButton2' is undefined.
+
+% 'xButton3' is undefined.
+
+% 'xButton4' is undefined.
+
+% 'xButton5' is undefined.
+
+% 'xButtonPress' is undefined.
+
+% 'xButtonRelease' is undefined.
+
+% 'xCirculateNotify' is undefined.
+
+% 'xCirculateRequest' is undefined.
+
+% 'xClientMessage' is undefined.
+
+% 'xColormapNotify' is undefined.
+
+% 'xComplex' is undefined.
+
+% 'xConfigureNotify' is undefined.
+
+% 'xConfigureRequest' is undefined.
+
+% 'xControl' is undefined.
+
+% 'xConvex' is undefined.
+
+% 'xCopyFromParent' is undefined.
+
+% 'xCreateNotify' is undefined.
+
+% 'xCrossing' is undefined.
+
+% 'xCurrentTime' is undefined.
+
+% 'xCursor' is undefined.
+
+
+% 'xDestroy' is undefined.
+
+% 'xDestroyNotify' is undefined.
+
+% 'xDirectColor' is undefined.
+
+% 'xDisable' is undefined.
+
+% 'xDoubleDash' is undefined.
+
+% 'xEnterNotify' is undefined.
+
+% 'xEvent' is undefined.
+
+% 'xExpose' is undefined.
+
+% 'xExposures' is undefined.
+
+% 'xFocus' is undefined.
+
+% 'xFocusIn' is undefined.
+
+% 'xFocusOut' is undefined.
+
+% 'xForget' is undefined.
+
+% 'xFrozen' is undefined.
+
+% 'xGrab' is undefined.
+
+% 'xGraphicsExpose' is undefined.
+
+% 'xGravityNotify' is undefined.
+
+% 'xGrayScale' is undefined.
+
+% 'xHeight' is undefined.
+
+% 'xHeightIncrement' is undefined.
+
+% 'xIconMask' is undefined.
+
+% 'xIconPixmap' is undefined.
+
+% 'xIconWindow' is undefined.
+
+% 'xIconX' is undefined.
+
+% 'xIconY' is undefined.
+
+% 'xIconic' is undefined.
+
+% 'xInferior' is undefined.
+
+% 'xInput' is undefined.
+
+% 'xInputFocus' is undefined.
+
+% 'xInputOnly' is undefined.
+
+% 'xInputOutput' is undefined.
+
+% 'xInvalidTime' is undefined.
+
+% 'xKeyPress' is undefined.
+
+% 'xKeyRelease' is undefined.
+
+% 'xKeyboard' is undefined.
+
+% 'xKeymapNotify' is undefined.
+
+% 'xLeaveNotify' is undefined.
+
+% 'xLeft' is undefined.
+
+% 'xLock' is undefined.
+
+% 'xMapNotify' is undefined.
+
+% 'xMapRequest' is undefined.
+
+% 'xMappingNotify' is undefined.
+
+% 'xMaskToBits' is undefined.
+
+% 'xMaxAspectDenominator' is undefined.
+
+% 'xMaxAspectNumerator' is undefined.
+
+% 'xMaxHeight' is undefined.
+
+% 'xMaxWidth' is undefined.
+
+% 'xMiddle' is undefined.
+
+% 'xMinAspectDenominator' is undefined.
+
+% 'xMinAspectNumerator' is undefined.
+
+% 'xMinHeight' is undefined.
+
+% 'xMinWidth' is undefined.
+
+% 'xMiter' is undefined.
+
+% 'xMod1' is undefined.
+
+% 'xMod2' is undefined.
+
+% 'xMod3' is undefined.
+
+% 'xMod4' is undefined.
+
+% 'xMod5' is undefined.
+
+% 'xModifier' is undefined.
+
+% 'xMotionNotify' is undefined.
+
+% 'xNoBlanking' is undefined.
+
+% 'xNoExpose' is undefined.
+
+% 'xNoExposures' is undefined.
+
+% 'xNoSymbol' is undefined.
+
+% 'xNonconvex' is undefined.
+
+% 'xNone' is undefined.
+
+% 'xNonlinear' is undefined.
+
+% 'xNonlinearVirtual' is undefined.
+
+% 'xNormal' is undefined.
+
+% 'xNotLast' is undefined.
+
+% 'xNotUseful' is undefined.
+
+% 'xNotViewable' is undefined.
+
+% 'xNotify7' is undefined.
+
+% 'xObscured' is undefined.
+
+% 'xOnOffDash' is undefined.
+
+% 'xOpaqueStippled' is undefined.
+
+% 'xOpposite' is undefined.
+
+% 'xParent' is undefined.
+
+% 'xParentRelative' is undefined.
+
+% 'xPartial' is undefined.
+
+% 'xPermanent' is undefined.
+
+% 'xPointer' is undefined.
+
+% 'xPointerRoot' is undefined.
+
+% 'xPointerWindow' is undefined.
+
+% 'xPrepend' is undefined.
+
+% 'xProgramHeight' is undefined.
+
+% 'xProgramWidth' is undefined.
+
+% 'xProgramX' is undefined.
+
+% 'xProgramY' is undefined.
+
+% 'xProjecting' is undefined.
+
+% 'xPropertyNotify' is undefined.
+
+% 'xPseudoColor' is undefined.
+
+% 'xReparentNotify' is undefined.
+
+% 'xReplace' is undefined.
+
+% 'xReplayKeyboard' is undefined.
+
+% 'xReplayPointer' is undefined.
+
+% 'xRequest10' is undefined.
+
+% 'xRequest12' is undefined.
+
+% 'xRequest6' is undefined.
+
+% 'xRequest7' is undefined.
+
+% 'xRequest8' is undefined.
+
+% 'xResizeRequest' is undefined.
+
+% 'xRight' is undefined.
+
+% 'xRound' is undefined.
+
+% 'xSelectionClear' is undefined.
+
+% 'xSelectionNotify' is undefined.
+
+% 'xSelectionRequest' is undefined.
+
+% 'xShift' is undefined.
+
+% 'xSibling' is undefined.
+
+% 'xSolid' is undefined.
+
+% 'xStatic' is undefined.
+
+% 'xStaticColor' is undefined.
+
+% 'xStaticGray' is undefined.
+
+% 'xStipple' is undefined.
+
+% 'xStippled' is undefined.
+
+% 'xSuccess' is undefined.
+
+% 'xSyncBoth' is undefined.
+
+% 'xSyncKeyboard' is undefined.
+
+% 'xSyncPointer' is undefined.
+
+% 'xTemporary' is undefined.
+
+% 'xTile' is undefined.
+
+% 'xTiled' is undefined.
+
+% 'xTopIf' is undefined.
+
+% 'xTrueColor' is undefined.
+
+% 'xUngrab' is undefined.
+
+% 'xUnmap' is undefined.
+
+% 'xUnmapNotify' is undefined.
+
+% 'xUnmapped' is undefined.
+
+% 'xUnobscured' is undefined.
+
+% 'xUnsorted' is undefined.
+
+% 'xUnviewable' is undefined.
+
+% 'xUserHeight' is undefined.
+
+% 'xUserWidth' is undefined.
+
+% 'xUserX' is undefined.
+
+% 'xUserY' is undefined.
+
+% 'xViewable' is undefined.
+
+% 'xVirtual' is undefined.
+
+% 'xVisibilityNotify' is undefined.
+
+% 'xWMMessage' is undefined.
+
+% 'xWhenMapped' is undefined.
+
+% 'xWhileGrabbed' is undefined.
+
+% 'xWidth' is undefined.
+
+% 'xWidthIncrement' is undefined.
+
+% 'xWindowGroup' is undefined.
+
+% 'xWithdrawn' is undefined.
+
+% 'xX' is undefined.
+
+% 'xXYPixmap' is undefined.
+
+% 'xY' is undefined.
+
+% 'xYSorted' is undefined.
+
+% 'xYXBanded' is undefined.
+
+% 'xYXSorted' is undefined.
+
+% 'xZPixmap' is undefined.
+
+% 'xcGetDepthAttribute' is undefined.
+
+% 'xcGetFontAttribute' is undefined.
+
+% 'xcGetFormatAttribute' is undefined.
+
+% 'xcGetImageAttribute' is undefined.
+
+% 'xcGetKeyboardAttribute' is undefined.
+
+% 'xcGetPixmapAttribute' is undefined.
+
+% 'xcGetPointerAttribute' is undefined.
+
+% 'xcGetVisualAttribute' is undefined.
+
+% 'xcSetKeyboardAttribute' is undefined.
+
+% 'xcSetPointerAttribute' is undefined.
+
+% 'xf' is undefined.
+
+% 'xfx' is undefined.
+
+% 'xfy' is undefined.
+
+% 'year' is undefined.
+
+% 'yf' is undefined.
+
+% 'yfx' is undefined.
+
+% '{' is undefined.
+
+% '}' is undefined.
+
+*** Yes
+> 

@@ -1,0 +1,11 @@
+#! /bin/csh
+
+# Copyright 1992 Digital Equipment Corporation
+# All Rights Reserved
+
+Test_all_loop |& awk -f error_msg.awk > ERROR.out
+diff ERROR.out ERROR.ref > ERROR.diff
+wc *.diff | awk  '$1>0 { print $4}'
+# echo ""
+# wc ERROR.diff
+grep Garbage ERROR.out | awk '{ n+=$4 };END{print "Total GCs =",n}'

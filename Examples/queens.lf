@@ -1,0 +1,266 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+%
+% A self-contained LIFE program for solving the N-queens problem,
+%    including an X interface for showing solutions.
+%
+%
+% The N-queens problem:
+%    place N queens on an NxN chessboard so that no two queens
+%    are in the same row, or same column, or same diagonal.
+%
+%
+% Last modified on Fri Oct 16 12:01:36 MET 1992 by milsted
+%      modified on Wed Jun 03 21:53:53 1992 by Hassan
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%
+% Notes:
+%
+% 1. Type "queens?" to start the program.
+%
+% 2. By default, the program finds solutions for the 8-queens problem.
+%    To find solutions for a different number of queens, for example
+%    4 queens, type "queens(4)?".
+%
+% 3. The program will stop after drawing the X-window and the chessboard
+%    before finding the first solution. Use backtracking thereafter to
+%    get each solution.
+%
+% 4. Backtracking may be done either in the usual manner by typing ";"
+%    at the Wild_LIFE prompt, or else by clicking any mouse button or
+%    typing any key while the pointer is in the X-window.
+%
+% 5. The program employs a "generate-then-test" strategy, that is,
+%    a position for each queen is generated then tested against the
+%    positions of already placed queens. Therefore, this program does
+%    not differ logically from its straight Prolog counterpart.
+%
+
+
+queens (N : {n;int}) :- !,
+	draw_window (N), 
+	draw_board,
+	(
+	  succeed	%% stop before finding the first solution
+	;
+	  place_queens ([], interval(1,N), interval(1,N))
+	).
+
+
+
+
+%
+%    Draw the board
+%    
+
+draw_board :-
+	draw_squares (0,0),
+	xDrawRectangle (Window : default_window,
+			U : unit, U,
+			L : scale(n-1), L,
+			linewidth => 8),
+	xDrawRectangle (Window,
+			U, U,
+			L, L,
+			linewidth => 1,
+			color => white).
+
+draw_squares (X,n) :- !.
+draw_squares (X,Y)    :-
+	draw_row (X,Y),
+	draw_squares (X,Y+1).
+
+draw_row (n,Y) :- !.
+draw_row (X,Y)    :-
+	xFillRectangle (default_window,
+			scale(X), scale(Y),
+			U:unit, U,
+			color => boardcolor(X,Y)),
+	draw_row (X+1,Y).
+
+
+
+
+%
+%    Place a queen: take an empty row X and choose an empty column Y.
+%    Check whether this X and Y clashes on a diagonal with any of the
+%    already placed queens. If no clash, draw a queen at X,Y and repeat the
+%    procedure with the other empty rows and columns. If there is a clash,
+%    then backtrack first through the values for Y then through the values
+%    for X.
+%
+
+place_queens (Queens, [], []).
+place_queens (Queens, [X|Rows], Cols) :-
+	choose_one (Y, from => Cols, rest => RestCols),
+	check_diagonals (X, Y, Queens),
+	draw_queen (X,Y),
+	place_queens ([(X,Y)|Queens], Rows, RestCols).
+
+
+
+check_diagonals (X, Y, []) :- !.
+check_diagonals (X, Y, [(X1,Y1)|Queens]) :-
+        X+Y =\= X1+Y1,
+        X-Y =\= X1-Y1,
+	check_diagonals (X, Y, Queens).
+
+
+
+
+%
+%    Draw a queen: the first disjunction draws a queen at row X, column Y;
+%    the second disjunction erases her.
+%    
+
+draw_queen (X,Y) :-
+	(
+	  cond (N:n =:= 8,
+		xDrawString (Window:default_window,
+			     X1 : (scale(A:(X-1)) + 0.18 * U:unit),
+			     Y1 : (scale(B:(Y-1)) + 0.65 * U),
+			     "b",
+			     font  => ChessFont:chessfont,
+			     color => QueenColor:queencolor),
+		xFillOval   (Window,
+			     X2 : (scale(A) + O:offset),
+			     Y2 : (scale(B) + O),
+			     H  : (unit - 2*O),
+			     H,
+			     color => QueenColor))
+	;
+	  cond (N =:= 8,
+		xDrawString (Window,
+			     X1,
+			     Y1,
+			     "b",
+			     font  => ChessFont,
+			     color => BoardColor:boardcolor(A,B)),
+		xFillOval   (Window,
+			     X2,
+			     Y2,
+			     H,
+			     H,
+			     color => BoardColor)),
+	  fail
+	).
+
+
+
+
+
+%
+%    Global variables and auxiliary routines:
+%	- various parameters for the size of the board and queens
+%         depending on the number of queens (n)
+%       - the color of the board at row X, column Y.
+%	- a distribution of integers in a given interval
+%	  biased towards the center of the interval.
+%	- a nondeterministic routine for choosing an element from a list.
+%
+
+
+offset    -> 5.
+unit      -> 2 * (100 / S:n * log(1+S)).
+scale (N) -> unit * (N+1).
+
+
+boardcolor (X,Y) ->
+	cond (((X+Y) mod 2) =:= 0, white, black).
+
+
+interval (From, To) ->
+	cond (From < To,
+	      append (interval(From+1,To-1), [From,To]),
+	      cond (From =:= To, [From], [])).
+    
+
+choose_one (from => []) :- !, fail.
+choose_one (H, from => [H|T], rest => T).
+choose_one (X, from => [H|T], rest => [H|L]) :- 
+	choose_one (X, from => T, rest => L).
+
+
+
+
+%
+%    The X interface:
+%	- draw the window
+%       - get the colors of the board and queens, and the chess font
+%	- the event handler
+%
+
+draw_window (N) :-
+	setq (n, N), 
+	xOpenConnection (Display),
+	xCreateWindow (Display,
+		       100,
+		       10,
+		       W : scale(N + 1),
+		       W, 
+		       Window,
+		       color => xWhite,
+		       windowtitle => strcon (int2str(N), " Queens"),
+		       eventmask => xDefaultEventMask),
+	setq (default_display, Display),
+	setq (default_window, Window),
+	cond (colors_and_font_absent, get_colors_and_font),
+	event_handler (true).
+
+
+
+get_colors_and_font :-
+	setq_color (180, 224, 201, white),
+	setq_color (19, 123, 103, black),
+	setq_color (204, 125, 50, queencolor),
+	setq_font  ("chs-s50", chessfont),
+	setq (colors_and_font_absent, false).
+
+setq_color (R, G, B, ColorName) :-
+	xRequestColor (default_window, R, G, B, Color),
+	setq (ColorName, Color).
+
+setq_font (FontString, FontName) :-
+	xLoadFont (default_display, Font, FontString),
+	setq (FontName, Font).
+
+
+
+event_handler (true)
+	-> true
+	|  event_handler
+		(handle_event (xGetEvent (default_window,
+					  eventmask => xDefaultEventMask))).
+
+handle_event (mouse_button)
+	-> true | fail.
+
+				
+handle_event (keyboard_event)
+	-> true | fail.
+
+handle_event (expose_event)
+	-> true | xRefreshWindow (default_window).
+
+
+
+
+%
+%    Actions executed when the file is loaded:
+%       - set the default number of queens to 8
+%       - when the program is first run, colors for the small boxes must
+%         be "requested" from the X interface. On subsequent runs, these
+%         requests are not necessary as the colors already exist. So, set
+%         a flag upon loading indicating that the colors have not yet been
+%         requested.
+%
+
+setq (n, 8)?
+
+setq (colors_and_font_absent, true)?

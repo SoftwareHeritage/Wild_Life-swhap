@@ -1,0 +1,25 @@
+A='*get_choice*', B={1;2}, '*set_choice*'(A)?
+;
+B={1;2}, A='*get_choice*', '*set_choice*'(A)?
+;
+;
+A1='*get_choice*', B={1;2}, A2='*get_choice*', C='*exists_choice*'(A1,A2)?
+;
+;
+A1='*get_choice*', A2='*get_choice*', C='*exists_choice*'(A1,A2)?
+;
+A1='*get_choice*'?
+B={1;2}?
+'*set_choice*'(A1)?
+;
+A1='*get_choice*'?
+B='*exists_choice*'(A1,'*get_choice*')?
+;
+;
+A1='*get_choice*'?
+A2='*get_choice*'?
+B='*exists_choice*'(A1,A2)?
+;
+;
+;
+

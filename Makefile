@@ -1,0 +1,341 @@
+# Copyright 1992 Digital Equipment Corporation
+# All Rights Reserved
+
+#****************************************************************
+
+PACKAGE = Life
+
+PROGRAM    = wild_life
+PROGOBJECT = print.o token.o life.o trees.o parser.o info.o login.o copy.o \
+             error.o \
+             built_ins.o types.o memory.o lefun.o interrupt.o \
+	     xpred.o templates.o xdisplaylist.o list.o raw.o \
+ 	     bi_sys.o bi_math.o bi_type.o lub.o
+
+
+MANPAGE    = $(PROGRAM).1
+
+SRC	= ../src
+
+LIBO    =
+LIBA    = 
+LIBOBJECT  =
+
+LINKS   = *.h *.c 
+
+# ***************************************************************
+# files exported to ultrix and mips
+
+PUBLIC  = 
+FRIENDS = 
+BIN     = $(PROGRAM)
+LIB     = $(LIBO) $(LIBA) 
+
+# ***************************************************************
+# C compilations
+
+CC       = cc$(KEY)
+
+DATADIR = $(PACKAGE)Dir
+SETUPDIR = `pwd`
+SETUP    = $(SETUPDIR)/.set_up
+DATE     = `date`
+VERSION  = 0.9
+
+CCFLAGS = -O -DX11 -DALIGN=4 -DWORD=4 -DGARBCOL #-DUNIF_DEBUG
+FASTCCFLAGS = -O3 -DX11 -DALIGN=4 -DWORD=4 -DGARBCOL #-DUNIF_DEBUG
+# CCFLAGS = -g -DX11 -DALIGN=4 -DWORD=4 -DGARBCOL #-DUNIF_DEBUG
+
+# X11
+# to compile with X predicates
+#
+# ALIGN
+# must be = 2^N, all values returned by STACK_ALLOC which is the
+# Wild-Life equivalent of MALLOC() are multiples of ALIGN.
+# This is important as on the PMax for example align should be set to 8 so
+# that DOUBLEs are read correctly from memory.
+#
+# WORD
+# this is the increment used for copy blocks.
+#
+# SETUP
+# this string is the name of the Wild-LIFE set-up file.
+#
+# UNIF_DEBUG
+# if defined causes the 'debug' mode to show matching and unification sub-goals
+#
+# GARBCOL
+# if defined will cause the garbage collector to be called when memory is low
+#
+
+LOADFLAGS = -g -lm -lX11
+FASTLOADFLAGS = -lm -lX11
+
+# '-lm' for mathematical functions
+# '-lX11' if '-DX11' is used.
+
+
+# Entry to bring the package up to date
+#    The "make all" entry should be the first real entry
+#    This section also includes the entries to rebuild everything
+#    in each subdirectory.  These entries will normally be the same.
+
+all: $(PROGRAM) .set_up
+	@echo
+	@echo "Life generation done"
+	@echo
+
+$(PROGRAM) may-be-empty: $(PROGOBJECT) 
+	mv $(PROGRAM) $(PROGRAM).old
+	$(CC) -o $(PROGRAM) $(PROGOBJECT) $(LOADFLAGS) 
+
+.set_up: .set_up_basis
+	sed -e "s%+SETUPDIR+%$(SETUPDIR)%g" < .set_up_basis > .set_up
+
+fast: .set_up
+	mv $(PROGRAM) $(PROGRAM).old
+	sed -e "s%+SETUP+%$(SETUP)%" < life.c > Life.c
+	sed -e "s/+VERSION+/$(VERSION)/" \
+            -e "s/+DATE+/$(DATE)/" < info.c > Info.c
+	$(CC) $(FASTCCFLAGS) -o $(PROGRAM) print.c token.c Life.c trees.c \
+	parser.c Info.c login.c copy.c error.c built_ins.c types.c \
+	memory.c lefun.c interrupt.c xpred.c templates.c xdisplaylist.c \
+	list.c raw.c bi_sys.c bi_math.c bi_type.c lub.c $(FASTLOADFLAGS)
+
+# .wild_life: .wild_life_basis
+# 	sed -e "s%+SETUPDIR+%$(SETUPDIR)%g" < .wild_life_basis > .wild_life
+
+# ***************************************************************
+# Miscellaneous
+
+lint:
+	lint $(CFLAGS) *.c $(LOADFLAGS) > lint.lst
+
+prof:
+	cc $(CFLAGS) -o proflife *.c $(LOADFLAGS) 
+	pixie -o proflife.pixie proflife 
+	proflife.pixie
+	prof -pixie -proc proflife > result 
+	rm proflife.* 
+	lpr result
+
+# ***************************************************************
+# Standard entries to remove files from the directories
+#    tidy    -- eliminate unwanted files
+#    scratch -- delete derived files in preparation for rebuild
+
+TIDIES =    -name ',*' \
+         -o -name '@*' \
+         -o -name '*~' \
+         -o -name '.,*' \
+         -o -name '.emacs_[0-9]*' \
+         -o -name 'core' \
+         -o -name 'a.out' \
+         -o -name 'gmon.out' \
+         -o -name 'gmonnub.out' \
+         -o -name '*.pp'
+
+tidy:
+	find ./ \( $(TIDIES) \) -exec rm -f {} \;
+
+scratch: tidy
+	rm -f *.o *.a *.d
+	$(IFTOP)(cd mips ; make scratch)
+	$(IFTOP)(cd ultrix ; make scratch)
+
+
+# ***************************************************************
+# Default entries to make .o and .edsel files from .mod
+
+.SUFFIXES: .edsel .mod .c .d .def .s
+
+.mod.edsel:
+	$(EDSEL) -e $*.o
+
+.def.d:
+	$(MP) $(MPFLAGS) -c $*.def
+
+.mod.o:
+	$(MP) $(MPFLAGS) -c $*.mod
+
+.c.o:
+	$(CC) $(CCFLAGS) -c $*.c
+
+.s.o:
+	$(AS) $(ASFLAGS) $*.s
+
+# ***************************************************************
+
+built_ins.o: built_ins.c extern.h trees.h login.h types.h parser.h copy.h \
+             error.h \
+             token.h print.h lefun.h memory.h 
+
+error.o: error.c extern.h print.h types.h
+
+copy.o: copy.c extern.h parser.h trees.h info.h
+
+interrupt.o: interrupt.c extern.h token.h
+
+lefun.o: lefun.c extern.h login.h copy.h trees.h parser.h print.h
+
+life.o: life.c extern.h print.h parser.h info.h login.h built_ins.h \
+      types.h copy.h token.h interrupt.h
+	sed -e "s%+SETUP+%$(SETUP)%" < life.c > Life.c
+	$(CC) $(CCFLAGS) -c Life.c
+	mv Life.o life.o # ; rm Life.c
+
+login.o: login.c extern.h trees.h copy.h parser.h token.h print.h \
+         error.h \
+         built_ins.h types.h lefun.h memory.h info.h
+
+memory.o: memory.c extern.h info.h print.h login.h lefun.h
+
+parser.o: parser.c extern.h trees.h token.h print.h
+
+print.o: print.c extern.h trees.h types.h memory.h info.h print.h
+
+token.o: token.c extern.h trees.h types.h token.h memory.h error.h
+
+trees.o: trees.c extern.h print.h memory.h
+
+types.o: types.c extern.h login.h trees.h print.h memory.h error.h
+
+xpred.o: xpred.c extern.h print.h built_ins.h types.h trees.h error.h templates.h
+
+templates.o: templates.c extern.h print.h built_ins.h types.h trees.h lefun.h error.h templates.h
+
+xdisplaylist.o: xdisplaylist.c xdisplaylist.h list.h
+
+list.o: list.c list.h
+
+raw.o: raw.c extern.h print.h built_ins.h types.h trees.h error.h templates.h xpred.h
+
+info.o: *.c *.h # compile the date if something has been changed
+	@echo don\'t be surprised, info is compiled for the date because something has changed
+	sed -e "s/+VERSION+/$(VERSION)/" \
+            -e "s/+DATE+/$(DATE)/" < info.c > Info.c
+	$(CC) $(CCFLAGS) -c Info.c
+	mv Info.o info.o ; rm Info.c
+
+bi_math.o: bi_math.c extern.h trees.h login.h parser.h copy.h token.h print.h \
+	lefun.h memory.h built_ins.h error.h
+
+bi_sys.o: bi_sys.c extern.h trees.h login.h parser.h copy.h token.h print.h \
+	lefun.h memory.h built_ins.h error.h
+
+bi_type.o: bi_type.c extern.h trees.h login.h parser.h copy.h token.h print.h \
+	lefun.h memory.h built_ins.h error.h
+
+lub.o: lub.c extern.h trees.h login.h token.h print.h memory.h error.h
+
+
+# ***************************************************************
+# Entries to run edsel on Modula-2+ definition and object files
+
+doEdselD:
+	$(EDSEL) $(DFILES)
+
+doEdselO:
+	$(EDSEL) $(MODULAOBJECT)
+
+
+# ***************************************************************
+# Entry to reconstruct a library archive
+#   The may-be-empty field is present to make this parse if LIBA=""
+
+$(LIBA) may-be-empty: $(LIBOBJECT)
+	-rm -f $(LIBA)
+	ar cr $(LIBA) $(LIBOBJECT)
+	ranlib $(LIBA)
+
+
+# ******************************************************************
+# Entries to simplify splitting up ultrix/mips subdirectories
+#    split -- splits the directory originally (only once)
+#    links -- reconstructs the symbolic links
+
+split:
+	@echo "Creating ultrix/mips subdirectories"
+	mkdir mips
+	ln -s /proj/mips/lib/releaseMakefile mips/Makefile
+	mkdir ultrix
+	ln -s /proj/ultrix/lib/releaseMakefile ultrix/Makefile
+	mkdir sun3
+	ln -s /proj/sun3/lib/releaseMakefile sun3/Makefile
+	make links
+
+links:
+	@echo "Making symbolic links"
+	@-(for F in $(LINKS); do \
+	      test -f $(SRC)/$$F && (test -f $$F || ln -s $(SRC)/$$F .); \
+           done; true)
+
+
+# ***************************************************************
+# Standard entries provided for all packages
+#
+#    install -- update all files; ship to /proj/packages; unlock
+#    ship    -- transfer files to /proj/packages; leave locked
+#    get     -- transfer files to local directory; lock package
+#    setlock -- lock package (not ordinarily used explicitly)
+#    unlock  -- unlock package (not ordinarily used explicitly)
+#    create  -- create new /proj/packages component and lock it
+#
+
+install:
+	make all && make ship && make unlock
+
+ship:	tidy
+	shippackage $(PACKAGE) \
+            -l /proj/mips/bin $(BIN) \
+            -l /proj/mips/lib $(DATADIR) \
+            -l /proj/man/mips/cat1 $(MANPAGE)
+
+get:
+	getpackage $(PACKAGE)
+
+setlock:
+	setlockpackage $(PACKAGE)
+
+unlock:
+	unlockpackage $(PACKAGE)
+
+create:
+	createpackage $(PACKAGE)
+
+backup:
+	echo "No backup function has been written yet for $(PACKAGE)"
+
+# *****************************************************************
+
+# profiling
+prof:
+	cc $(CFLAGS) -o proflife *.c $(LOADFLAGS) 
+	pixie -o proflife.pixie proflife 
+	proflife.pixie
+	prof -pixie -proc proflife > result 
+	rm proflife.* 
+	lpr result
+
+# *****************************************************************
+
+# building shell archives
+
+PACKET_SIZE = 90
+DIRS = 
+PREFIX = Life
+KIT = README Makefile .set_up_basis wild_life.1 \
+      built_ins.c interrupt.c login.c print.c types.c error.c \
+      copy.c lefun.c memory.c token.c x_pred.c \
+      info.c life.c parser.c trees.c \
+      built_ins.h info.h login.h print.h types.h error.h \
+      copy.h interrupt.h memory.h token.h x_pred.h \
+      extern.h lefun.h parser.h trees.h
+
+$(DATADIR)/$(PREFIX)01: *.c *.h distrib/README distrib/Makefile \
+      distrib/.set_up_basis distrib/wild_life.1 
+	(cd distrib; makekit -s$(PACKET_SIZE)k -n$(PREFIX) -t"Read README." $(DIRS) $(KIT))
+	mv distrib/$(PREFIX)0* $(DATADIR)
+
+kit: $(DATADIR)/$(PREFIX)01
+

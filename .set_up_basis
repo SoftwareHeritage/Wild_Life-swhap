@@ -1,0 +1,517 @@
+% Copyright 1991 Digital Equipment Corporation.
+% All Rights Reserved.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% This file is read upon startup each time Wild_Life is run.
+% It should not be modified by the user.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+non_strict('*op*')?
+
+% Operator declarations.
+% Insofar as possible, these correspond with Edinburgh-style Prolog.
+
+% Declarations of sorts, functions, and predicates.
+'*op*'(1200,xfx,:-)?
+'*op*'(1200,xfx,->)?
+'*op*'(1200,fx,::)?
+'*op*'(1200,xfx,:=)?
+'*op*'(1200,xfx,<|)?
+
+% Control flow inside of predicates.
+'*op*'(1150,xfx,|)?
+'*op*'(1100,xfy,;)? 
+'*op*'(1000,xfy,',')?
+'*op*'(900,fy,'\+')?
+
+% Unification predicate and lookalikes.
+'*op*'(700,xfx,=)?
+'*op*'(700,xfx,<-)?
+'*op*'(700,xfx,<<-)?
+
+% Functions.
+% All expressions have precedence < 700.
+'*op*'(695,fx,`)?  % Quote is loosest of the functions
+'*op*'(690,yfx,or)?
+'*op*'(680,yfx,and)?
+'*op*'(670,xfx,===)?
+
+% Arithmetic comparisons 
+'*op*'(670,xfx,<)?
+'*op*'(670,xfx,>)?
+'*op*'(670,xfx,=<)?
+'*op*'(670,xfx,>=)?
+'*op*'(670,xfx,=:=)?
+'*op*'(670,xfx,=\=)?
+
+% String comparisons
+'*op*'(670,xfx,$<)?
+'*op*'(670,xfx,$>)?
+'*op*'(670,xfx,$=<)?
+'*op*'(670,xfx,$>=)?
+'*op*'(670,xfx,$==)?
+'*op*'(670,xfx,$\==)?
+
+% Sort comparisons
+'*op*'(670,xfx,:<)?
+'*op*'(670,xfx,:>)?
+'*op*'(670,xfx,:=<)?
+'*op*'(670,xfx,:>=)?
+'*op*'(670,xfx,:==)?
+'*op*'(670,xfx,:><)?
+'*op*'(670,xfx,:\<)?
+'*op*'(670,xfx,:\>)?
+'*op*'(670,xfx,:\=<)?
+'*op*'(670,xfx,:\>=)?
+'*op*'(670,xfx,:\==)?
+'*op*'(670,xfx,:\><)?
+
+'*op*'(500,xfy,\)?
+
+% Arithmetic operations
+'*op*'(500,yfx,+)?
+'*op*'(500,yfx,-)?
+'*op*'(500,fx,+)?
+'*op*'(500,fx,-)?
+'*op*'(500,yfx,/\)?
+'*op*'(500,yfx,\/)?
+'*op*'(400,yfx,*)?
+'*op*'(400,yfx,//)?
+'*op*'(400,yfx,/)?
+'*op*'(400,yfx,>>)?
+'*op*'(400,yfx,<<)?
+'*op*'(300,yfx,mod)?
+'*op*'(200,xfy,^)?
+
+% Unify function and coreference tag
+'*op*'(150,xfy,&)?
+'*op*'(150,xfy,:)?
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Built-in sorts.
+
+'*disjunction*' <| '*list_object*'.
+'*conjunction*' <| '*list_object*'.
+list <| '*list_object*'.
+'*list_object*' <| built_in.
+string <| built_in.
+
+real <| built_in.
+int <| real.
+
+bool <| built_in.
+true <| bool.
+false <| bool.
+
+% To force a type encoding.
+encode?
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Some necessary declarations.
+
+non_strict(non_strict)?
+non_strict(dynamic)?
+non_strict(static)?
+non_strict(delay_check)?
+non_strict('*listing*')?
+% non_strict(assert)? % 17.9
+% non_strict(asserta)? % 17.9
+% non_strict(clause)? % 17.9
+% non_strict(retract)? % 17.9
+% non_strict(cond)? % 24.8
+non_strict(evalin)? % 17.9
+non_strict(eval)? % 17.9 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% For correct operation of the interpreter, nothing before this line should
+% be modified.  What comes after is used for definition of built-ins and can
+% be edited (albeit very carefully).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+non_strict(load)?
+
+dynamic('*loaded_file*')?
+
+% A very useful load that searches a path, does suffix completion,
+% and remembers if a file has already been loaded.
+% The default path may be extended by an optional user-defined function
+% load_path that gives a disjunction of directories to search in.
+% The set of default suffixes may be extended by an optional user-defined
+% function load_suffixes that gives a disjunction of suffixes.
+% This predicate accepts an arbitrary number of arguments.
+X:load :-
+	trace(T,U),
+	'*load_2*'(F:features(X), length(F)>1, X),
+	trace(T,U).
+
+'*load_2*'([], _, _) :- !.
+'*load_2*'([F|L], M, X) :-
+        ( exists(CF:strcon('*load_path*',
+                           strcon(SF:'*str*'(project(F,X)),
+                                  '*life_ext*'))), !,
+          ( '*loaded_file*'(CF), !,
+            write("*** File """,CF,""" was already loaded"), nl
+          ; simple_load(CF),
+            assert('*loaded_file*'(CF)),
+            '*load_3*'(M,CF,SF)
+          )
+        ; write("*** File """,project(F,X),""" not found"), nl
+        ), !,
+        '*load_2*'(L, M, X).
+
+'*load_3*'(B, CF, SF) :- B or CF$\==SF, !,
+	write("*** File """,CF,""" loaded"), nl.
+'*load_3*'.
+
+% The user may define a function load_path that returns a
+% disjunction of other directories to be searched.
+'*load_path*' -> { ""
+		 ; strcon((load_path | is_function(load_path)),{"";"/"})
+                 ; "+SETUPDIR+/Examples/"
+                 }.
+
+% The user may define a function load_suffixes that returns a
+% disjunction of other suffixes to be used.
+'*life_ext*' -> { (load_suffixes | is_function(load_suffixes))
+                ; ".lf"
+                ; ".life"
+		; ""
+                }.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+non_strict(listing)?
+
+% A more useful listing predicate from the '*listing*' built-in.
+X:listing :-
+	trace(T,U),
+	'*listing_2*'(features(X), X),
+	trace(T,U).
+
+'*listing_2*'([],    _) :- !.
+'*listing_2*'([F],   X) :- !, nl, '*listing_3*'(F, X).
+'*listing_2*'([F|L], X) :- nl, '*listing_3*'(F, X), '*listing_2*'(L, X).
+
+'*listing_3*'(F, X) :- P=project(F,X), '*listing*'(P), '*listing_4*'(P).
+
+'*listing_4*'(P) :- var(P), !,
+        write("% '@' is the top sort."), nl.
+% '*listing_4*'(P:int)    :- !, '*listing_4a*'(int).
+% '*listing_4*'(P:real)   :- !, '*listing_4a*'(real).
+% '*listing_4*'(P:string) :- !, '*listing_4a*'(string).
+'*listing_4*'(P) :- '*listing_4a*'(P).
+
+'*listing_4a*'(P) :- is_sort(P), is_value(P)=false, !, 
+	'*listing_5*'(parents(P), P),
+        '*listing_6*'(children(P), P).
+	% write("% Parents: "),writeq(parents(P)), nl,
+	% write("% Children: "),writeq(children(P)), nl.
+'*listing_4a*'(_).
+
+'*listing_5*'([], _) :- !.
+'*listing_5*'([X|Xs], Y) :-
+	writeq(Y), write(" <| "), writeq(X), write("."), nl,
+	'*listing_5*'(Xs, Y).
+
+'*listing_6*'([], _) :- !.
+'*listing_6*'([X|Xs], Y) :-
+	writeq(X), write(" <| "), writeq(Y), write("."), nl,
+	'*listing_6*'(Xs, Y).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+non_strict(op)?
+
+% An op predicate that handles any pattern of arguments.
+op(P,K,F,precedence=>P,kind=>K,functor=>F) :-
+	trace(T,U),
+	( '*op_2*'(P,K,F), trace(T,U)
+	; trace(T,U), fail
+	).
+
+'*op_2*'(P,K,F) :- nonvar(P), nonvar(K), nonvar(F), F=list, !, '*op_3*'(F,P,K).
+'*op_2*'(P,K,F) :- nonvar(F), F=list, !,
+	'*write_err*'("*** Error: invalid operator declaration."),
+	'*nl_err*'.
+'*op_2*'(P,K,F) :- nonvar(P), nonvar(K), nonvar(F), !, '*op*'(P,K,F).
+'*op_2*'(P,K,F) :- member(op(P,K,F),'*ops*').
+
+% List of operators.
+'*op_3*'([]) :- !.
+'*op_3*'([H|T],P,K) :- '*op_2*'(P,K,H),'*op_3*'(T,P,K).
+
+% Default call handler.
+% This is called for predicates that have no definition.
+% More sophisticated call handlers can be written to do auto-loading
+% of undefined predicates.
+call_handler(P) :- is_sort(P), !,
+	'*write_err*'("*** Error: the sort '"),'*writeq_err*'(P),
+        '*write_err*'("' occurs where a predicate or function is expected."),
+	'*nl_err*', abort.
+call_handler(P) :- !,
+	'*write_err*'("*** Error: '"),'*writeq_err*'(P),
+        '*write_err*'("' is not a predicate or a function."), '*nl_err*',
+	abort.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Built-ins defined in Life.
+
+% A poor man's global variable update:
+% set(X,V) :- retract((X->@)), !, assert((X->V)).
+% set(X,V) :- dynamic(X), assert((X->V)).
+
+% This has become a C built-in:
+% non_strict(setq)?
+% setq(X,V) :- Value = eval(V), retract((X->@)), !, assert((X->Value)).
+% setq(X,V) :- dynamic(X), Value = eval(V), assert((X->Value)).
+
+% Newline
+nl :- write("
+").
+'*nl_err*' :- '*write_err*'("
+").
+% nl :- put(10).
+% '*nl_err*' :- '*put_err*'(10).
+
+% Beep
+beep :- put(7).
+
+% Negation
+\+ X :- X,!,fail.
+\+ .
+
+% Quote
+non_strict(`)?
+`X -> X.
+
+% Definition of bagof using non-backtrackable destructive assignment.
+% bagof(X,G) -> R:[]:cond(prove((G,R<<-[X|R],fail)),R,R). % (19.8)
+% This version does not allow non-residuating functions in G &
+% "leaks" the evaluation of G into X on the outside:
+% bagof(X,G) -> R:[] | (G,R<<-[X|R],fail ; true).
+% This version seems to be completely clean:
+non_strict(bagof)?
+bagof(X,G) -> R:[] | (evalin(G),R<<-[evalin(X)|R],fail ; true).
+
+% Reducing a monoidal binary operator over a list:
+reduce(F,E,[]) -> E.
+reduce(F,E,[H|T]) -> F(H,reduce(F,E,T)).
+
+% Mapping a function over a list:
+map(F,[])->[].
+map(F,[H|T])->[F(H)|map(F,T)].
+
+% Mapping a unary relation over a list:
+maprel(P,[H|T]) :- !,rootsort(P):@(H),maprel(P,T).
+maprel(P,[]).
+
+append([],L:list)->L.
+append([H|T],L:list)->[H|append(T,L)].
+
+length([])->0.
+length([H|T])->1+length(T).
+
+member(X,[X|_]).
+member(X,[_|L]) :- member(X,L).
+
+% These are removed since their functionality is subsumed by that of
+% unification.
+% Lisp pseudo-compatibility.
+% nil -> [].
+% cons(H,T) -> [H|T].
+% car([H|T]) -> H.
+% cdr([H|T]) -> T.
+
+% Repeat.
+% repeat.
+% repeat :- repeat.
+
+% Handy for functional programming.
+where -> @.
+
+% Logic functions (some are C built-ins).
+
+% and(false,bool) -> false.
+% and(bool,false) -> false.
+% and(true,true) -> true.
+
+% or(true,bool) -> true.
+% or(bool,true) -> true.
+% or(false,false) -> false.
+
+not(true) -> false.
+not(false) -> true.
+
+xor(true,false) -> true.
+xor(false,true) -> true.
+xor(bool,bool) -> false.
+
+% Numeric functions.
+
+
+A^N:int -> cond(N<0,1/'*pwr*'(A,-N),'*pwr*'(A,N)).
+
+'*pwr*'(A,0) -> 1.
+'*pwr*'(A,N) -> A*'*pwr*'(A,(N-1)).
+
+abs(R) -> cond(R<0,-R,R).
+max(A,B) -> cond(A>B,A,B).
+min(A,B) -> cond(A>B,B,A).
+
+% Useful utilities.
+
+% Pause for N seconds.
+pause(N) :-
+	S=realtime,
+	repeat,
+	realtime-S>N,
+	!.
+
+% Time a goal (whether it succeeds or fails).
+run(G) :-
+	S=cputime,
+	(G;succeed),
+	!,
+	write("Time = ",cputime-S," sec"),
+	nl.
+
+% Infinite loop.
+inf -> inf.
+
+% Generate a unique integer for each call to genint
+
+dynamic('*genint_counter*')?
+'*genint_counter*' -> 0.
+
+genint -> N:'*genint_counter*' | setq('*genint_counter*',N+1).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% String operations 
+
+"" $== "" -> true.
+S1:string $== S2:string ->
+    (asc(S1)=:=asc(S2)) and
+    '*lenstreq*'(substr(S1,2,L1:strlen(S1)),substr(S2,2,L2:strlen(S2)),L1,L2).
+
+'*lenstreq*'("","",_,_) -> true.
+'*lenstreq*'(S1,S2,L1,L2) ->
+    L1=:=L2 and L1>0 and (asc(S1)=:=asc(S2)) and
+    '*lenstreq*'(substr(S1,2,LL1:(L1-1)),substr(S2,2,LL2:(L2-1)),LL1,LL2).
+
+"" $=< string -> true.
+string $=< "" -> false.
+S1:string $=< S2:string ->
+    (C1:asc(S1)<C2:asc(S2))
+    or
+    (C1=:=C2 and '*lenstrle*'(substr(S1,2,L1:strlen(S1)),
+                              substr(S2,2,L2:strlen(S2)),
+                              L1,L2)).
+
+
+'*lenstrle*'("",string,_,_) -> true.
+'*lenstrle*'(string,"",_,_) -> false.
+'*lenstrle*'(S1,S2,L1,L2) ->
+    (C1:asc(S1) < C2:asc(S2))
+    or
+    (C1=:=C2 and '*lenstrle*'(substr(S1,2,LL1:(L1-1)),
+                              substr(S2,2,LL2:(L2-1)),
+                              LL1,LL2)).
+
+S1:string $< S2:string -> S1$=<S2 and not(S1$==S2).
+S1:string $> S2:string -> not(S1$=<S2).
+S1:string $>= S2:string -> not(S1$=<S2) or S1$==S2.
+S1:string $\== S2:string -> not(S1$==S2).
+
+% Convert any psi-term to a string.
+% This converts strings to themselves, integers to a string giving their
+% value, and other psi-terms to a string giving their print name.
+'*str*'(X) -> cond(is_value(X),'*strval*'(X),psi2str(X)).
+
+'*strval*'(S:string) -> S.
+'*strval*'(N:int) -> int2str(N).
+
+% This is now a C built-in:
+% int2str(N:int) -> cond(N<0,
+%                        strcon("-",'*num*'(-N)),
+%                        '*num*'(N)).
+% 
+% '*num*'(N) -> cond(N<10,
+%                    psi2str(chr(N+48)),
+%                    strcon('*num*'(Q:floor(N/10)),'*num*'(N-Q*10))).
+
+% This is the same speed:
+% num2str(0) -> "0".
+% num2str(1) -> "1".
+% num2str(2) -> "2".
+% num2str(3) -> "3".
+% num2str(4) -> "4".
+% num2str(5) -> "5".
+% num2str(6) -> "6".
+% num2str(7) -> "7".
+% num2str(8) -> "8".
+% num2str(9) -> "9".
+% num2str(N:int) ->
+%         cond(N<0,
+%              strcon("-",num2str(-N)),
+%              strcon(num2str(Q:floor(N/10)),num2str(N-Q*10))).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Personal customizing.
+
+'*init*' :-
+	exists("./.wild_life"),
+	simple_load("./.wild_life"),
+	write("Loaded customizing file from current directory."), nl,
+	!.
+
+'*init*' :-
+	exists("~/.wild_life"),
+	simple_load("~/.wild_life"),
+	write("Loaded customizing file from home directory."), nl,
+	!.
+
+'*init*' :-
+	write("No customizing file loaded."), nl,
+	!.
+
+% '*init*' :-
+% 	exists("+SETUPDIR+/.wild_life"),
+% 	simple_load("+SETUPDIR+/.wild_life"),
+% 	write("Loaded default customizing file."), nl,
+% 	!.
+
+'*init*' :-
+	'*write_err*'("*** Warning: couldn't access any customizing file."),
+	'*nl_err*'.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Start up.
+
+% load the X constants
+simple_load("+SETUPDIR+/xconstants.lf"),
+
+% load the X tables
+simple_load("+SETUPDIR+/xtables.lf"),
+
+% load the functions xSet* and xGet*
+simple_load("+SETUPDIR+/xgetset.lf"),
+
+% simple_load("+SETUPDIR+/xfunctions.lf"),
+
+simple_load("+SETUPDIR+/xpred.lf"),
+
+'*init*',
+
+initrandom(realtime)?
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

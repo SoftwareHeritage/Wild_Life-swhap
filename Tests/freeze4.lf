@@ -1,0 +1,3 @@
+
+p(X:int) :- write(X), nl.
+

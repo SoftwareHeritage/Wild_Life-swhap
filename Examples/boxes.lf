@@ -1,0 +1,291 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright 1992 Digital Equipment Corporation
+% All Rights Reserved
+%
+% A self-contained LIFE program for solving a 2D bin-packing problem
+%    including an X interface for showing solutions.
+%
+% The problem:
+%    given a large box of known dimensions and a number of smaller boxes,
+%    also of known dimensions, pack the smaller boxes into the large box.
+%
+%
+%
+% Last modified on Fri Oct 16 11:57:10 MET 1992 by milsted
+%      modified on Wed Jun 03 21:53:53 1992 by Hassan
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%
+% Notes:
+%
+% 1. Type "boxes?" to start the program.
+%
+% 2. The program will stop after drawing the X-window before finding
+%    the first solution. Use backtracking thereafter to get each solution.
+%
+% 3. Backtracking may be done either in the usual manner by typing ";"
+%    at the Wild_LIFE prompt, or else by clicking any mouse button or
+%    typing any key while the pointer is in the X-window.
+%
+% 4. The program illustrates LIFE's residuation principle: the placement
+%    constraints for the boxes are set up BEFORE any actual values are
+%    tried for their positions. In other words, it employs a
+%    "test-then-generate" strategy as opposed to "generate-then-test".
+%
+
+
+boxes :-
+	draw_window,
+	make_boxes (Boxes),
+	constrain_boxes (Boxes),
+	(
+	  succeed	%% stop before finding the first solution
+	;
+	  place_boxes (Boxes)
+	).
+
+
+
+
+%
+%    A box consists of an x coordinate, a y coordinate,
+%    a width, a height, and a color.
+%
+
+:: box (X:posint, Y:posint, W:int, H:int, color => C).
+
+posint := I:int | I >= 0.
+
+
+
+
+%
+%   Making the boxes: specify their widths, heights, and colors, but
+%   NOT their x and y coordinates. The boxes are sorted by size
+%   (a function of their width and height) so that the "largest"
+%   boxes will be placed first.
+%
+
+make_boxes (Boxes) :-
+	Boxes = sort_boxes
+	  ([ box (_, _, 1, 3, color => aquamarine),
+	     box (_, _, 2, 2, color => coral),
+	     box (_, _, 3, 2, color => cornflowerblue),
+	     box (_, _, 3, 1, color => gold),
+	     box (_, _, 4, 1, color => goldenrod),
+	     box (_, _, 4, 2, color => khaki),
+	     box (_, _, 1, 4, color => magenta),
+	     box (_, _, 2, 3, color => mediumslateblue),
+	     box (_, _, 2, 4, color => mediumspringgreen),
+	     box (_, _, 2, 1, color => orangered),
+	     box (_, _, 7, 1, color => plum),
+	     box (_, _, 3, 3, color => salmon),
+	     box (_, _, 1, 6, color => yellow)
+	  ]).
+
+
+
+
+%
+%    These routines define the (placement) constraints between boxes.
+%    A box must be disjoint from all other boxes: the values selected
+%    for its x, y coordinates must not cause it to overlap another box.
+%
+
+constrain_boxes ([]) :- !. 
+constrain_boxes ([Box|Boxes]) :- 
+	disjoint_from (Box, Boxes),
+	constrain_boxes (Boxes).
+
+
+disjoint_from (_, []) :- !.
+disjoint_from (Box1, [Box2 | Boxes]) :- 
+	constrain_box (Box1, Box2), 
+	disjoint_from (Box1, Boxes).
+
+
+constrain_box (@(X1,Y1,W1,H1), @(X2,Y2,W2,H2))
+	    -> (X1+W1 =< X2) or (X1 >= X2+W2) or
+	       (Y1+H1 =< Y2) or (Y1 >= Y2+H2).
+
+
+
+
+%
+%   Placing the boxes: for each box, first choose an x and a y coordinate
+%   that lies within the big box. If the choice is correct, the residuated
+%   placement constraints on that box will be satisfied automatically.
+%   If not, then, by backtracking, new x and y values will be chosen and
+%   the process repeated.
+%   
+
+place_boxes ([]) :- !.
+place_boxes ([Box|Boxes]) :-
+	place_box (Box),
+	place_boxes (Boxes).
+
+place_box (Box : @(X,Y,W,H)) :-
+	member (X+W, x_coords),
+        member (Y+H, y_coords),
+        draw_box (Box).
+
+
+
+
+%
+%    Draw a box: the first disjunction draws the box, the second
+%    disjunction erases it.
+%    
+
+draw_box (@(X,Y,W,H,color => C)) :-
+	(
+	  xFillRectangle (Window : default_window,
+			  X1 : (X * S:scale + O:offset),
+			  Y1 : (Y * S + O),
+			  W1 : (W * S - D:(2*O)),
+			  H1 : (H * S - D),
+			  color => C),
+	  xDrawRectangle (Window, X1, Y1, W1, H1, linewidth => 5),
+	  xDrawRectangle (Window, X1, Y1, W1, H1, color => xWhite)
+	;
+	  xFillRectangle (Window,
+			  X1 - 3,
+			  Y1 - 3,
+			  W1 + 6,
+			  H1 + 6,
+			  color => xWhite),
+	  fail
+	).
+
+
+
+
+%
+%    Global variables and auxiliary routines:
+%	- the big box's width and height
+%	- the size of a box as a function of its width and heigth
+%	- a routine for sorting the boxes according to their size
+%	  (this uses a generic quicksort routine)
+%
+
+scale -> 70.
+offset -> 4.
+
+bigbox_width  -> 10.
+bigbox_height -> 7.
+
+
+size (Width, Height) ->
+	(2 + abs(Height-Width) + Width) * Width * Height.
+
+
+interval (From, To) ->
+	cond (From > To, [], [From | interval(From+1,To)]).
+
+
+sort_boxes (Boxes) -> q_sort (Boxes, order => bigger_box).
+
+bigger_box (@(_,_,W1,H1), @(_,_,W2,H2)) ->
+	size (W1,H1) >= size (W2,H2).
+
+q_sort (L, order => O) -> undlist (dqsort (L, order => O)).
+
+undlist (X\Y) -> X | Y=[].
+
+dqsort ([H|T], order => O) ->
+	(L1\L2) : where ((Less,More)  : split (H,T,([],[]),order => O),
+                        (L1 \ [H|L3]): dqsort (Less,order => O),
+                        (L3 \ L2)    : dqsort (More,order => O)).
+dqsort ([]) -> L\L.
+
+split (X, [H|T], (Less, More), order => O) ->
+	cond (O(H,X),
+              split (X, T, ([H|Less], More), order => O),
+              split (X, T, (Less, [H|More]), order => O)).
+split (@, [], P) -> P.
+
+
+
+
+%
+%    The X interface:
+%	- draw the window
+%       - get the colors for the boxes
+%	- the event handler
+%
+
+draw_window :-
+	xOpenConnection (Display),
+	xCreateWindow (Display,
+		       100,
+		       10,
+		       bigbox_width * S:scale,
+		       bigbox_height * S,
+		       Window,
+		       color => xWhite,
+		       windowtitle => "Boxes",
+		       eventmask => xDefaultEventMask),
+	setq (default_window, Window),
+	cond (colors_absent, get_colors),
+	event_handler (true).
+
+
+
+get_colors :-
+	setq_named_color ("aquamarine", aquamarine),
+	setq_named_color ("coral", coral),
+	setq_named_color ("cornflower blue", cornflowerblue),
+	setq_named_color ("gold", gold),
+	setq_named_color ("goldenrod", goldenrod),
+	setq_named_color ("khaki", khaki),
+	setq_named_color ("magenta", magenta),
+	setq_named_color ("medium slate blue", mediumslateblue),
+	setq_named_color ("medium spring green", mediumspringgreen),
+	setq_named_color ("orange red", orangered),
+	setq_named_color ("plum", plum),
+	setq_named_color ("salmon", salmon),
+	setq_named_color ("yellow", yellow),
+	setq (colors_absent, false).
+
+setq_named_color (ColorString, ColorName) :-
+	xRequestNamedColor (default_window, ColorString, Color),
+	setq (ColorName, Color).
+
+
+
+event_handler (true)
+	-> true
+	|  event_handler
+		(handle_event (xGetEvent (default_window,
+					  eventmask => xDefaultEventMask))).
+
+handle_event (mouse_button)
+	-> true | fail.
+
+handle_event (keyboard_event)
+	-> true | fail.
+
+handle_event (expose_event)
+	-> true | xRefreshWindow (default_window).
+
+
+
+
+%
+%    Actions executed when the file is loaded:
+%       - calculate the range of x and y coordinates for the smaller boxes
+%       - when the program is first run, colors for the small boxes must
+%         be "requested" from the X interface. On subsequent runs, these
+%         requests are not necessary as the colors already exist. So, set
+%         a flag upon loading indicating that the colors have not yet been
+%         requested.
+%
+
+setq (x_coords, interval(1, bigbox_width))?
+setq (y_coords, interval(1, bigbox_height))?
+
+setq (colors_absent, true)?
