@@ -1,5 +1,8 @@
 # Wild_LIFE — SWHAP Workbench
 
+[![SWH](https://archive.softwareheritage.org/badge/origin/https://github.com/SoftwareHeritage/Wild_Life-swhap/)](https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/SoftwareHeritage/Wild_Life-swhap)
+[![SWH](https://archive.softwareheritage.org/badge/swh:1:dir:d0af2cf1134380d1e64abbcd2d01e6fda23988df/)](https://archive.softwareheritage.org/swh:1:dir:d0af2cf1134380d1e64abbcd2d01e6fda23988df;origin=https://github.com/SoftwareHeritage/Wild_Life-swhap;visit=swh:1:snp:f263a22699d367fb21dc0073f33e97d3fed30a69;anchor=swh:1:rev:ba337e26da2fa4ad05fca72b937993fda5aa21b1)
+
 This repository contains the curated acquisition of the **Wild_LIFE / LIFE system**
 developed at the DEC Paris Research Lab, following the [Software Heritage Acquisition Process (SWHAP)](https://github.com/SoftwareHeritage/swhapguide).
 
