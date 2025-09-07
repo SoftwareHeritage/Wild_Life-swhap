@@ -1,0 +1,126 @@
+{
+  "@context": "https://doi.org/10.5063/sciencecodemeta/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+
+  "name": "Wild_LIFE (Logic, Inheritance, Functions, Equations)",
+  "identifier": "wildlife",
+  "description": "Wild_LIFE is an interpreter for the LIFE programming language (Logic, Inheritance, Functions, Equations), developed at the DEC Paris Research Laboratory in the early 1990s. LIFE is a constraint logic programming language that integrates functional programming, inheritance, and equational theories.",
+
+  "version": "1.0",
+  "releaseNotes": "Final release archived in the CMU AI Repository (1994-03-24). Earlier versions 0.90 and 0.91 are also preserved.",
+
+  "keywords": [
+    "logic programming",
+    "constraint programming",
+    "feature terms",
+    "equational theories",
+    "functional programming",
+    "LIFE language",
+    "DEC Paris Research Lab"
+  ],
+
+  "programmingLanguage": [
+    {
+      "@type": "ComputerLanguage",
+      "name": "C",
+      "url": "https://en.wikipedia.org/wiki/C_(programming_language)"
+    },
+    {
+      "@type": "ComputerLanguage",
+      "name": "LIFE",
+      "alternateName": "Logic, Inheritance, Functions, Equations",
+      "description": "A programming language integrating logic programming, functional programming, and type inheritance."
+    }
+  ],
+
+  "license": {
+    "@type": "CreativeWork",
+    "name": "DEC Non-Commercial License",
+    "url": "https://www.cs.cmu.edu/afs/cs/project/ai-repository/ai/lang/prolog/impl/fp_lp/life/license.txt"
+  },
+
+  "referencePublication": [
+    {
+      "@type": "CreativeWork",
+      "name": "The Wild_LIFE Handbook",
+      "author": [
+        {
+          "@type": "Person",
+          "name": "Peter Van Roy"
+        }
+      ],
+      "datePublished": "1993",
+      "url": "http://logic.csci.unt.edu/tarau/teaching/WildLIFE/Handbook/"
+    }
+  ],
+
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Peter Van Roy",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Digital Equipment Corporation, Paris Research Laboratory"
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "Richard Meyer",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Digital Equipment Corporation, Paris Research Laboratory"
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "Jean-Claude Hervé",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Digital Equipment Corporation, Paris Research Laboratory"
+      }
+    }
+  ],
+
+  "contributor": [
+    {
+      "@type": "Person",
+      "name": "Hassan Aït-Kaci",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Digital Equipment Corporation, Paris Research Laboratory"
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "Seth Copen Goldstein",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Digital Equipment Corporation, Paris Research Laboratory"
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "Abder Aggoun",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Digital Equipment Corporation, Paris Research Laboratory"
+      }
+    }
+  ],
+
+  "dateCreated": "1992-12-09",
+  "datePublished": "1994-03-24",
+  "dateModified": "1994-03-24",
+
+  "funder": {
+    "@type": "Organization",
+    "name": "Digital Equipment Corporation (DEC), Paris Research Laboratory"
+  },
+
+  "codeRepository": "https://www.cs.cmu.edu/afs/cs/project/ai-repository/ai/lang/prolog/impl/fp_lp/life/",
+  "relatedLink": [
+    "https://www.softwareheritage.org",
+    "https://github.com/SoftwareHeritage/swhapguide"
+  ]
+
+}
